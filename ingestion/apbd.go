@@ -41,7 +41,7 @@ type TaskResult struct {
 
 const BasePortalURL = "https://djpk.kemenkeu.go.id/portal"
 
-func main() {
+func apbd() {
 	config := TargetConfig{
 		Years:      []string{"2026"},
 		Periods:    []string{"8"},
