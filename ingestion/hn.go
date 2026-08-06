@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
+	"strconv"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,7 +23,7 @@ var verbose = true
 const (
 	baseURL   = "https://spse.inaproc.id"
 	portalID  = "slemankab"
-	year      = "2026"
+	year      = "2025"
 	userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
 
@@ -33,19 +34,48 @@ type DTResponse struct {
 	Data            [][]interface{} `json:"data"`
 }
 
-type TenderDetail struct {
+type PaketDetail struct {
 	Kode              string
-	NamaPaket         string
+	NamaPaket         string // tender batal
+	KodeRUP           int
+	SumberDana        string
+	TanggalPembuatan  string
+	TahapTender  string
 	Instansi          string
 	SatuanKerja       string
-	Kategori          string
-	SistemPengadaan   string
+	JenisPengadaan    string
+	MetodePengadaan   string // irelevan?
 	TahunAnggaran     string
 	NilaiPagu         string
 	NilaiHPS          string
 	LokasiPekerjaan   string
-	SyaratKualifikasi string
+	//SyaratKualifikasi string
+	PesertaPaket      string
 	URL               string
+}
+
+func splitRupiah(s string) (string, string) {
+	s = strings.TrimSpace(s)
+	s = strings.TrimPrefix(s, "Rp. ")
+	s = strings.ReplaceAll(s, ".", "")
+	s = strings.Split(s, ",")[0]
+
+	amount, _ := strconv.ParseInt(s, 10, 64)
+
+	part1 := amount / 2
+	part2 := amount - part1
+
+	return formatRupiah(part1), formatRupiah(part2)
+}
+
+func formatRupiah(n int64) string {
+	s := strconv.FormatInt(n, 10)
+
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "." + s[i:]
+	}
+
+	return "Rp. " + s + ",00"
 }
 
 func printVerbose(format string, a ...interface{}) {
@@ -143,8 +173,8 @@ func fetchTenderIDs(client *http.Client, token string) ([]string, error) {
 	return tenderIDs, nil
 }
 
-func scrapeTenderDetails(client *http.Client, tenderIDs []string) []TenderDetail {
-	var results []TenderDetail
+func scrapePaketDetails(client *http.Client, tenderIDs []string) []PaketDetail {
+	var results []PaketDetail
 	var mu sync.Mutex
 
 	c := colly.NewCollector(
@@ -175,10 +205,9 @@ func scrapeTenderDetails(client *http.Client, tenderIDs []string) []TenderDetail
 	})
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
-		detail := TenderDetail{}
+		detail := PaketDetail{}
 		detail.URL = e.Request.URL.String()
 
-		// Extract Kode from URL fallback
 		urlPath := e.Request.URL.Path
 		re := regexp.MustCompile(`/lelang/(\d+)/pengumumanlelang`)
 		matches := re.FindStringSubmatch(urlPath)
@@ -188,17 +217,17 @@ func scrapeTenderDetails(client *http.Client, tenderIDs []string) []TenderDetail
 
 		wsRegex := regexp.MustCompile(`\s+`)
 		
-		// Fallback for Nama Paket if it's not in the table but in a header
+		/*
 		headerTitle := strings.TrimSpace(e.ChildText("h2, .page-header, strong"))
 		if headerTitle != "" {
 			detail.NamaPaket = wsRegex.ReplaceAllString(headerTitle, " ")
 		}
+		*/
 
 		e.ForEach("table.table tr", func(_ int, row *colly.HTMLElement) {
 			rawKey := strings.TrimSpace(row.ChildText("th"))
 			rawVal := strings.TrimSpace(row.ChildText("td"))
 			
-			// Clean Whtiespace and Lowercase the key for robust matching
 			keyLower := strings.ToLower(wsRegex.ReplaceAllString(rawKey, " "))
 			val := wsRegex.ReplaceAllString(rawVal, " ")
 
@@ -206,31 +235,31 @@ func scrapeTenderDetails(client *http.Client, tenderIDs []string) []TenderDetail
 				return
 			}
 
-			// Substring matching to catch inconsistencies like "nilai pagu paket "
 			switch {
 			case strings.Contains(keyLower, "kode tender"):
 				detail.Kode = val
-			case strings.Contains(keyLower, "nama paket"):
+			case strings.EqualFold(keyLower,  "nama tender") || strings.EqualFold(keyLower, "nama paket") || strings.EqualFold(keyLower, "nama swakelola"):
 				detail.NamaPaket = val
 			case strings.Contains(keyLower, "instansi"):
 				detail.Instansi = val
 			case strings.Contains(keyLower, "satuan kerja"):
 				detail.SatuanKerja = val
-			case strings.Contains(keyLower, "kategori"):
-				detail.Kategori = val
-			case strings.Contains(keyLower, "sistem pengadaan"):
-				detail.SistemPengadaan = val
+			case strings.Contains(keyLower, "jenis pengadaan"):
+				detail.JenisPengadaan = val
+			case strings.Contains(keyLower, "metode pengadaan"):
+				detail.MetodePengadaan = val
 			case strings.Contains(keyLower, "tahun anggaran"):
 				detail.TahunAnggaran = val
-			case strings.Contains(keyLower, "nilai pagu paket") || strings.Contains(keyLower, "pagu"):
-				detail.NilaiPagu = val
-			case strings.Contains(keyLower, "nilai hps paket") || strings.Contains(keyLower, "hps"):
-				detail.NilaiHPS = val
-			case strings.Contains(keyLower, "lokasi pekerjaan") || strings.Contains(keyLower, "lokasi"):
+			case strings.Contains(keyLower, "pagu"):
+				a, b := splitRupiah(val)
+				detail.NilaiPagu = a
+				detail.NilaiHPS = b
+			case strings.Contains(keyLower, "lokasi"):
 				detail.LokasiPekerjaan = val
 			}
 		})
 
+		/*
 		var syarat []string
 		e.ForEach("ul.syarat-kualifikasi li, div.kualifikasi-content", func(_ int, item *colly.HTMLElement) {
 			text := strings.TrimSpace(item.Text)
@@ -240,6 +269,7 @@ func scrapeTenderDetails(client *http.Client, tenderIDs []string) []TenderDetail
 			}
 		})
 		detail.SyaratKualifikasi = strings.Join(syarat, " | ")
+		*/
 
 		mu.Lock()
 		results = append(results, detail)
@@ -261,7 +291,7 @@ func scrapeTenderDetails(client *http.Client, tenderIDs []string) []TenderDetail
 	return results
 }
 
-func exportToCSV(data []TenderDetail) error {
+func exportToCSV(data []PaketDetail) error {
 	if len(data) == 0 {
 		return fmt.Errorf("no data to export")
 	}
@@ -279,10 +309,10 @@ func exportToCSV(data []TenderDetail) error {
 	defer writer.Flush()
 
 	headers := []string{
-		"Kode", "NamaPaket", "Instansi", "SatuanKerja", 
-		"Kategori", "SistemPengadaan", "TahunAnggaran", 
-		"NilaiPagu", "NilaiHPS", "LokasiPekerjaan", 
-		"SyaratKualifikasi", "URL",
+		"Kode", "Nama Paket", "K/L/PD/Instansi Lainnya", "Satuan Kerja", 
+		"Jenis Pengadaan", "Metode Pengadaan", "Tahun Anggaran", 
+		"Nilai Pagu", "Nilai HPS", "Lokasi Pekerjaan", 
+		"URL",
 	}
 	
 	if err := writer.Write(headers); err != nil {
@@ -292,9 +322,9 @@ func exportToCSV(data []TenderDetail) error {
 	for _, d := range data {
 		record := []string{
 			d.Kode, d.NamaPaket, d.Instansi, d.SatuanKerja,
-			d.Kategori, d.SistemPengadaan, d.TahunAnggaran,
+			d.JenisPengadaan, d.MetodePengadaan, d.TahunAnggaran,
 			d.NilaiPagu, d.NilaiHPS, d.LokasiPekerjaan,
-			d.SyaratKualifikasi, d.URL,
+			d.URL,
 		}
 		if err := writer.Write(record); err != nil {
 			return err
@@ -334,7 +364,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	results := scrapeTenderDetails(client, tenderIDs)
+	results := scrapePaketDetails(client, tenderIDs)
 
 	err = exportToCSV(results)
 	if err != nil {
