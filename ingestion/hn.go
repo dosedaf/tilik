@@ -46,36 +46,39 @@ type PaketDetail struct {
 	JenisPengadaan    string
 	MetodePengadaan   string // irelevan?
 	TahunAnggaran     string
-	NilaiPagu         string
-	NilaiHPS          string
+	NilaiPagu         int64
+	NilaiHPS          int64
 	LokasiPekerjaan   string
 	//SyaratKualifikasi string
 	PesertaPaket      string
+	Kategori          string
 	URL               string
 }
 
-func splitRupiah(s string) (string, string) {
-	s = strings.TrimSpace(s)
-	s = strings.TrimPrefix(s, "Rp. ")
-	s = strings.ReplaceAll(s, ".", "")
-	s = strings.Split(s, ",")[0]
+func splitNumbers(s string) ([]int64, error) {
+	parts := strings.Split(s, "Rp.")
 
-	amount, _ := strconv.ParseInt(s, 10, 64)
+	var numbers []int64
 
-	part1 := amount / 2
-	part2 := amount - part1
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
 
-	return formatRupiah(part1), formatRupiah(part2)
-}
+		part = strings.ReplaceAll(part, ".", "")
 
-func formatRupiah(n int64) string {
-	s := strconv.FormatInt(n, 10)
+		part = strings.Split(part, ",")[0]
 
-	for i := len(s) - 3; i > 0; i -= 3 {
-		s = s[:i] + "." + s[i:]
+		num, err := strconv.ParseInt(part, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		numbers = append(numbers, num)
 	}
 
-	return "Rp. " + s + ",00"
+	return numbers, nil
 }
 
 func printVerbose(format string, a ...interface{}) {
@@ -244,6 +247,10 @@ func scrapePaketDetails(client *http.Client, tenderIDs []string) []PaketDetail {
 				detail.Instansi = val
 			case strings.Contains(keyLower, "satuan kerja"):
 				detail.SatuanKerja = val
+
+				if val == "1.02.0.00.0.00.01.0000" {
+					detail.SatuanKerja = "Dinas Kesehatan"
+				}
 			case strings.Contains(keyLower, "jenis pengadaan"):
 				detail.JenisPengadaan = val
 			case strings.Contains(keyLower, "metode pengadaan"):
@@ -251,9 +258,13 @@ func scrapePaketDetails(client *http.Client, tenderIDs []string) []PaketDetail {
 			case strings.Contains(keyLower, "tahun anggaran"):
 				detail.TahunAnggaran = val
 			case strings.Contains(keyLower, "pagu"):
-				a, b := splitRupiah(val)
-				detail.NilaiPagu = a
-				detail.NilaiHPS = b
+				numbers, err := splitNumbers(val)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				detail.NilaiPagu = numbers[0]
+				detail.NilaiHPS = numbers[1]
 			case strings.Contains(keyLower, "lokasi"):
 				detail.LokasiPekerjaan = val
 			}
@@ -311,7 +322,7 @@ func exportToCSV(data []PaketDetail) error {
 	headers := []string{
 		"Kode", "Nama Paket", "K/L/PD/Instansi Lainnya", "Satuan Kerja", 
 		"Jenis Pengadaan", "Metode Pengadaan", "Tahun Anggaran", 
-		"Nilai Pagu", "Nilai HPS", "Lokasi Pekerjaan", 
+		"Nilai Pagu (dalam Rupiah)", "Nilai HPS (dalam Rupiah)", "Lokasi Pekerjaan", 
 		"URL",
 	}
 	
@@ -323,7 +334,7 @@ func exportToCSV(data []PaketDetail) error {
 		record := []string{
 			d.Kode, d.NamaPaket, d.Instansi, d.SatuanKerja,
 			d.JenisPengadaan, d.MetodePengadaan, d.TahunAnggaran,
-			d.NilaiPagu, d.NilaiHPS, d.LokasiPekerjaan,
+			strconv.FormatInt(d.NilaiPagu, 10), strconv.FormatInt(d.NilaiHPS, 10), d.LokasiPekerjaan,
 			d.URL,
 		}
 		if err := writer.Write(record); err != nil {
