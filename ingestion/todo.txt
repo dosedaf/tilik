@@ -1,6 +1,9 @@
+MVP sleman
 loop over specific years
-tambahin opsi lain, non tender, swakelola dll
 categorize yg udh realisasi dll mungkin?
 pastiin spse itu update beneran ga sih?
 kok data dibawah taun 2022 an gada ya?
 fetch pemenang
+
+done
+tambahin opsi lain, non tender, swakelola dll
