@@ -1,0 +1,189 @@
+package main
+
+import (
+	"encoding/csv"
+	"path/filepath"
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+)
+
+func exportToCSV(
+	data []Paket,
+	category string,
+) error {
+	if len(data) == 0 {
+		return fmt.Errorf(
+			"no data to export for category %s",
+			category,
+			)
+	}
+
+	timestamp := time.Now().Format("20060102_150405")
+
+	targetDir := "./spse"
+
+	filename := fmt.Sprintf(
+		"spse_%s_%s_%s.csv",
+		pemda,
+		category,
+		timestamp,
+		)
+
+	err := os.MkdirAll(targetDir, 0755)
+	if err != nil {
+		fmt.Printf("Failed to create directory: %v", err)
+		return err
+	}
+
+	fullPath := filepath.Join(targetDir, filename)
+
+	file, err := os.Create(fullPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	var headers []string
+
+	switch category {
+	case "tender":
+		headers = []string{
+			"Kategori",
+			"Kode Tender",
+			"Nama Tender",
+			"K/L/PD/Instansi Lainnya",
+			"Satuan Kerja",
+			"Jenis Pengadaan",
+			"Metode Pengadaan",
+			"Tahun Anggaran",
+			"Nilai Pagu (dalam Rupiah)",
+			"Nilai HPS (dalam Rupiah)",
+			"Lokasi Pekerjaan",
+			"URL",
+		}
+	case "nontender":
+		headers = []string{
+			"Kategori",
+			"Kode Paket",
+			"Nama Paket",
+			"K/L/PD/Instansi Lainnya",
+			"Satuan Kerja",
+			"Jenis Pengadaan",
+			"Metode Pengadaan",
+			"Tahun Anggaran",
+			"Nilai Pagu (dalam Rupiah)",
+			"Nilai HPS (dalam Rupiah)",
+			"Lokasi Pekerjaan",
+			"URL",
+		}
+	case "pencatatan":
+		headers = []string{
+			"Kategori",
+			"Kode Paket",
+			"Nama Paket",
+			"K/L/PD/Instansi Lainnya",
+			"Satuan Kerja",
+			"Jenis Pengadaan",
+			"Metode Pengadaan",
+			"Tahun Anggaran",
+			"Nilai Pagu Paket (dalam Rupiah)",
+			"URL",
+		}
+	case "swakelola":
+		headers = []string{
+			"Kategori",
+			"Kode Swakelola",
+			"Nama Swakelola",
+			"K/L/PD",
+			"Satuan Kerja",
+			// "Tipe Pelaksanaan Swakelola",
+			"Tahun Anggaran",
+			"Nilai Pagu Paket (dalam Rupiah)",
+			"URL",
+		}
+	}
+
+	if err := writer.Write(headers); err != nil {
+		return err
+	}
+
+	var record []string
+
+	for _, d := range data {
+		switch category {
+		case "tender":
+			record = []string{
+				d.Kategori,
+				d.Kode,
+				d.Nama,
+				d.Instansi,
+				d.Satker,
+				d.Tender.JenisPengadaan,
+				d.Tender.MetodePengadaan,
+				d.Tahun,
+				strconv.FormatInt(d.Pagu, 10),
+				strconv.FormatInt(d.Tender.HPS, 10),
+				d.Tender.Lokasi,
+				d.URL,
+			}
+		case "nontender":
+			record = []string{
+				d.Kategori,
+				d.Kode,
+				d.Nama,
+				d.Instansi,
+				d.Satker,
+				d.NonTender.JenisPengadaan,
+				d.NonTender.MetodePengadaan,
+				d.Tahun,
+				strconv.FormatInt(d.Pagu, 10),
+				strconv.FormatInt(d.NonTender.HPS, 10),
+				d.NonTender.Lokasi,
+				d.URL,
+			}
+		case "pencatatan":
+			record = []string{
+				d.Kategori,
+				d.Kode,
+				d.Nama,
+				d.Instansi,
+				d.Satker,
+				d.Pencatatan.JenisPengadaan,
+				d.Pencatatan.MetodePengadaan,
+				d.Tahun,
+				strconv.FormatInt(d.Pagu, 10),
+				d.URL,
+			}
+		case "swakelola":
+			record = []string{
+				d.Kategori,
+				d.Kode,
+				d.Nama,
+				d.Instansi,
+				d.Satker,
+				d.Tahun,
+				strconv.FormatInt(d.Pagu, 10),
+				d.URL,
+			}
+
+		}
+
+		if err := writer.Write(record); err != nil {
+			return err
+		}
+	}
+
+	printVerbose(
+		"[%s] Exported %d records to %s",
+		category,
+		len(data),
+		filename,
+		)
+
+	return nil
+}
