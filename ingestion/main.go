@@ -11,8 +11,6 @@ import (
 	"regexp"
 	"time"
 	"strings"
-
-	"github.com/gocolly/colly/v2"
 )
 
 func getPath(category, pemda, kode, page string) string {
@@ -270,11 +268,7 @@ func main() {
 			continue
 		}
 
-	c := colly.NewCollector(
-		colly.AllowedDomains("spse.inaproc.id"),
-		colly.UserAgent(userAgent),
-		colly.Async(true),
-		)
+		c := newScraper(client, category)
 
 		var results []Paket
 

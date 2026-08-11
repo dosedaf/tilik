@@ -1,5 +1,6 @@
+define MVP nya apa (SPSE -> fraud, monopoly detection dll?)
 MVP sleman
-rewrite scraper
+rewrite scraper (performance + readability)
 loop over specific years
 categorize yg udh realisasi dll mungkin?
 pastiin spse itu update beneran ga sih?
@@ -8,3 +9,4 @@ fetch pemenang
 
 done
 tambahin opsi lain, non tender, swakelola dll
+refactor kecil2an scraper

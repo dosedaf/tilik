@@ -30,11 +30,12 @@ func extractKode(path, prefix string) string {
 	return parts[0]
 }
 
-func scrapeTenderDetails(client *http.Client, c *colly.Collector, ids []string) []Paket {
-	category := "tender"
-	var results []Paket
-	var mu sync.Mutex
-	var scraped atomic.Int64
+func newScraper(client *http.Client, category string) (*colly.Collector){
+	c := colly.NewCollector(
+		colly.AllowedDomains("spse.inaproc.id"),
+		colly.UserAgent(userAgent),
+		colly.Async(true),
+		)
 
 	baseURLParsed, err := url.Parse(baseURL)
 
@@ -71,13 +72,16 @@ func scrapeTenderDetails(client *http.Client, c *colly.Collector, ids []string) 
 			"Referer",
 			getPath(category, pemda, "", "portal"),
 			)
-
-		printVerbose(
-			"[%s] => GET %s",
-			category,
-			r.URL.String(),
-			)
 	})
+
+	return c
+}
+
+func scrapeTenderDetails(client *http.Client, c *colly.Collector, ids []string) []Paket {
+	category := "tender"
+	var results []Paket
+	var mu sync.Mutex
+	var scraped atomic.Int64
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		detail := Paket{
@@ -229,49 +233,6 @@ func scrapeNonTenderDetails(client *http.Client, c *colly.Collector, ids []strin
 	var mu sync.Mutex
 	var scraped atomic.Int64
 
-	baseURLParsed, err := url.Parse(baseURL)
-
-	if err == nil && client.Jar != nil {
-		cookies := client.Jar.Cookies(baseURLParsed)
-
-		if len(cookies) > 0 {
-			_ = c.SetCookies(baseURL, cookies)
-		}
-	}
-
-	err = c.Limit(&colly.LimitRule{
-		DomainGlob:  "*spse.inaproc.id*",
-		Parallelism: 2,
-		Delay:       1 * time.Second,
-	})
-
-	if err != nil {
-		fmt.Println("error")
-	}
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set(
-			"Accept",
-			"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-			)
-
-		r.Headers.Set(
-			"Accept-Language",
-			"en-US,en;q=0.9,id;q=0.8",
-			)
-
-		r.Headers.Set(
-			"Referer",
-			getPath(category, pemda, "", "portal"),
-			)
-
-		printVerbose(
-			"[%s] => GET %s",
-			category,
-			r.URL.String(),
-			)
-	})
-
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		detail := Paket{
 			Kategori: category,
@@ -421,49 +382,6 @@ func scrapePencatatanDetails(client *http.Client, c *colly.Collector, ids []stri
 	var mu sync.Mutex
 	var scraped atomic.Int64
 
-	baseURLParsed, err := url.Parse(baseURL)
-
-	if err == nil && client.Jar != nil {
-		cookies := client.Jar.Cookies(baseURLParsed)
-
-		if len(cookies) > 0 {
-			_ = c.SetCookies(baseURL, cookies)
-		}
-	}
-
-	err = c.Limit(&colly.LimitRule{
-		DomainGlob:  "*spse.inaproc.id*",
-		Parallelism: 2,
-		Delay:       1 * time.Second,
-	})
-
-	if err != nil {
-		fmt.Println("error")
-	}
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set(
-			"Accept",
-			"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-			)
-
-		r.Headers.Set(
-			"Accept-Language",
-			"en-US,en;q=0.9,id;q=0.8",
-			)
-
-		r.Headers.Set(
-			"Referer",
-			getPath(category, pemda, "", "portal"),
-			)
-
-		printVerbose(
-			"[%s] => GET %s",
-			category,
-			r.URL.String(),
-			)
-	})
-
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		detail := Paket{
 			Kategori: category,
@@ -603,49 +521,6 @@ func scrapeSwakelolaDetails(client *http.Client, c *colly.Collector, ids []strin
 	var results []Paket
 	var mu sync.Mutex
 	var scraped atomic.Int64
-
-	baseURLParsed, err := url.Parse(baseURL)
-
-	if err == nil && client.Jar != nil {
-		cookies := client.Jar.Cookies(baseURLParsed)
-
-		if len(cookies) > 0 {
-			_ = c.SetCookies(baseURL, cookies)
-		}
-	}
-
-	err = c.Limit(&colly.LimitRule{
-		DomainGlob:  "*spse.inaproc.id*",
-		Parallelism: 2,
-		Delay:       1 * time.Second,
-	})
-
-	if err != nil {
-		fmt.Println("error")
-	}
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set(
-			"Accept",
-			"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-			)
-
-		r.Headers.Set(
-			"Accept-Language",
-			"en-US,en;q=0.9,id;q=0.8",
-			)
-
-		r.Headers.Set(
-			"Referer",
-			getPath(category, pemda, "", "portal"),
-			)
-
-		printVerbose(
-			"[%s] => GET %s",
-			category,
-			r.URL.String(),
-			)
-	})
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		detail := Paket{
