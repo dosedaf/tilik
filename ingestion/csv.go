@@ -64,6 +64,7 @@ func exportToCSV(
 			"Nilai Pagu (dalam Rupiah)",
 			"Nilai HPS (dalam Rupiah)",
 			"Lokasi Pekerjaan",
+			"Pemenang Berkontrak",
 			"URL",
 		}
 	case "nontender":
@@ -79,6 +80,7 @@ func exportToCSV(
 			"Nilai Pagu (dalam Rupiah)",
 			"Nilai HPS (dalam Rupiah)",
 			"Lokasi Pekerjaan",
+			"Pemenang Berkontrak",
 			"URL",
 		}
 	case "pencatatan":
@@ -92,6 +94,7 @@ func exportToCSV(
 			"Metode Pengadaan",
 			"Tahun Anggaran",
 			"Nilai Pagu Paket (dalam Rupiah)",
+			"Pemenang Berkontrak",
 			"URL",
 		}
 	case "swakelola":
@@ -129,6 +132,7 @@ func exportToCSV(
 				strconv.FormatInt(d.Pagu, 10),
 				strconv.FormatInt(d.Tender.HPS, 10),
 				d.Tender.Lokasi,
+				d.Tender.PemenangBerkontrak,
 				d.URL,
 			}
 		case "nontender":
@@ -144,6 +148,7 @@ func exportToCSV(
 				strconv.FormatInt(d.Pagu, 10),
 				strconv.FormatInt(d.NonTender.HPS, 10),
 				d.NonTender.Lokasi,
+				d.NonTender.PemenangBerkontrak,
 				d.URL,
 			}
 		case "pencatatan":

@@ -1,5 +1,7 @@
 define MVP nya apa (SPSE -> fraud, monopoly detection dll?)
 MVP sleman
+bersih2 data misal lokasi, apbd dobel2
+extract lokasi dari nama contoh: ODTW Tlogo Putri di nama Tender
 rewrite scraper (performance + readability)
 loop over specific years
 categorize yg udh realisasi dll mungkin?

@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-var verbose = false
+var verbose = true
 
 const (
 	baseURL   = "https://spse.inaproc.id"
@@ -14,8 +14,8 @@ const (
 )
 
 var scrapeLimits = map[string]int{
-	"tender":     -1,
-	"nontender":  50,
+	"tender":     5,
+	"nontender":  5,
 	"swakelola":  0,
 	"pencatatan": 0,
 }
@@ -25,6 +25,7 @@ type CategoryPaths struct {
 	Pengumuman string
 	Peserta    string
 	Pemenang   string
+	PemenangBerkontrak string
 	Dt         string
 }
 
@@ -34,6 +35,7 @@ var categoryPaths = map[string]CategoryPaths{
 		Pengumuman: "/lelang/%s/pengumumanlelang",
 		Peserta:    "/lelang/%s/peserta",
 		Pemenang:   "/evaluasi/%s/pemenang",
+		PemenangBerkontrak:   "/evaluasi/%s/pemenangberkontrak",
 		Dt:         "/dt/lelang",
 	},
 
@@ -42,14 +44,14 @@ var categoryPaths = map[string]CategoryPaths{
 		Pengumuman: "/nontender/%s/pengumumanpl",
 		Peserta:    "/nontender/%s/peserta",
 		Pemenang:   "/evaluasinontender/%s/pemenang",
+		PemenangBerkontrak:   "/evaluasinontender/%s/pemenangberkontrak",
 		Dt:         "/dt/pl",
 	},
 
 	"pencatatan": {
 		Portal:     "/pencatatan",
 		Pengumuman: "/pencatatan/pengumumannonspk?id=%s",
-		Peserta:    "",
-		Pemenang:   "/pencatatan/%s/pengumumannonspkpemenang",
+		PemenangBerkontrak:   "/pencatatan/%s/pengumumannonspkpemenang",
 		Dt:         "/dt/nonspk",
 	},
 
@@ -57,7 +59,7 @@ var categoryPaths = map[string]CategoryPaths{
 		Portal:     "/swakelola",
 		Pengumuman: "/swakelola/%s/pengumuman",
 		Peserta:    "",
-		Pemenang:   "",
+		PemenangBerkontrak:   "/swakelola/pengumumanswakelolapelaksana/",
 		Dt:         "/dt/swakelola",
 	},
 }
@@ -95,6 +97,7 @@ type TenderDetail struct {
 	//JenisKontrak string
 	HPS int64
 	Lokasi string
+	PemenangBerkontrak string
 }
 
 type NonTenderDetail struct {
@@ -103,14 +106,17 @@ type NonTenderDetail struct {
 	JenisKontrak string
 	HPS int64
 	Lokasi string
+	PemenangBerkontrak string
 }
 
 type PencatatanDetail struct {
 	JenisPengadaan	string
 	MetodePengadaan string
+	PemenangBerkontrak string
 }
 
 type SwakelolaDetail struct {
 	TipePelaksana string
+	PelaksanaSwakelola string
 }
 

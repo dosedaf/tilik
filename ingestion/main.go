@@ -49,6 +49,13 @@ func getPath(category, pemda, kode, page string) string {
 
 		path = fmt.Sprintf(paths.Pemenang, kode)
 
+	case "pemenang_berkontrak":
+		if paths.PemenangBerkontrak == "" || kode == "" {
+			return ""
+		}
+
+		path = fmt.Sprintf(paths.PemenangBerkontrak, kode)
+
 	default:
 		return ""
 	}
@@ -272,16 +279,18 @@ func main() {
 		}
 
 		c := newScraper(client, category)
+		c2 := newScraper(client, category)
 
 		var results []Paket
+		var winner map[string]string
 
 		switch category {
 		case "tender":
-			//results = scrapeTenderDetails(client, c, ids)
-			_ = scrapeTenderPemenang(client, c, ids)
+			results = scrapeTenderDetails(client, c, ids)
+			winner = scrapeTenderPemenangBerkontrak(client, c2, ids)
 		case "nontender":
-			//results = scrapeNonTenderDetails(client, c, ids)
-			_ = scrapeNonTenderPemenang(client, c, ids)
+			results = scrapeNonTenderDetails(client, c, ids)
+			winner = scrapeNonTenderPemenangBerkontrak(client, c2, ids)
 		case "pencatatan":
 			results = scrapePencatatanDetails(client, c, ids)
 		case "swakelola":
@@ -295,6 +304,17 @@ func main() {
 				)
 			continue
 		}
+
+		if category == "tender" {
+			for i := range results {
+				if results[i].Tender.PemenangBerkontrak == "Tender Batal" {
+					continue
+				}
+
+				results[i].Tender.PemenangBerkontrak = winner[results[i].Kode]
+			}
+		}
+
 
 		if err := exportToCSV(
 			results,

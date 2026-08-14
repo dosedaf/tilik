@@ -26,7 +26,6 @@ func extractKode(path, prefix string) string {
 }
 
 func newScraper(client *http.Client, category string) (*colly.Collector){
-	fmt.Println(getPath(category, pemda, "", "portal"))
 	c := colly.NewCollector(
 		colly.AllowedDomains("spse.inaproc.id"),
 		colly.UserAgent(userAgent),
@@ -114,9 +113,11 @@ func scrapeTenderDetails(client *http.Client, c *colly.Collector, ids []string) 
 			switch {
 			case strings.EqualFold(keyLower, "kode tender"):
 				detail.Kode = val
-				fmt.Println(val)
 
 			case strings.EqualFold(keyLower, "nama tender"):
+				if strings.Contains(val, "Tender Batal") {
+					detail.Tender.PemenangBerkontrak = "Tender Batal"
+				}
 				detail.Nama = val
 
 			case strings.Contains(keyLower, "k/l/pd"):
@@ -654,9 +655,9 @@ func scrapeSwakelolaDetails(client *http.Client, c *colly.Collector, ids []strin
 /*
 	bergantung bgt sama selector. pastiin selector sama semua lol. or tambahin if cases
 */
-func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string) []string {
+func scrapeTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
 	category := "tender"
-	var pemenang []string
+	pemenang := make(map[string]string)
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		urlPath := e.Request.URL.Path
@@ -670,7 +671,9 @@ func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string)
 				kode,
 				strings.TrimSpace(detailTag.Text()),
 				)
-			return
+
+			pemenang[kode] = strings.TrimSpace(detailTag.Text())
+			return 
 		}
 
 		fmt.Printf(
@@ -681,7 +684,7 @@ func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string)
 			strings.TrimSpace(e.DOM.Find("title").Text()),
 			)
 
-		pemenang= append(pemenang, "kosong")
+		pemenang[kode] = "Tidak ada"
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -693,7 +696,7 @@ func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string)
 			category,
 			pemda,
 			id,
-			"pemenang",
+			"pemenang_berkontrak",
 		)
 
 		if targetURL == "" {
@@ -721,9 +724,9 @@ func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string)
 
 }
 
-func scrapeNonTenderPemenang(client *http.Client, c *colly.Collector, ids []string) []string {
+func scrapeNonTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
 	category := "nontender"
-	var pemenang []string
+	pemenang := make(map[string]string)
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		urlPath := e.Request.URL.Path
@@ -737,6 +740,8 @@ func scrapeNonTenderPemenang(client *http.Client, c *colly.Collector, ids []stri
 				kode,
 				strings.TrimSpace(detailTag.Text()),
 				)
+
+			pemenang[kode] = strings.TrimSpace(detailTag.Text())
 			return
 		}
 
@@ -748,7 +753,7 @@ func scrapeNonTenderPemenang(client *http.Client, c *colly.Collector, ids []stri
 			strings.TrimSpace(e.DOM.Find("title").Text()),
 			)
 
-		pemenang= append(pemenang, "kosong")
+		pemenang[kode] = "Tidak ada"
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -760,7 +765,7 @@ func scrapeNonTenderPemenang(client *http.Client, c *colly.Collector, ids []stri
 			category,
 			pemda,
 			id,
-			"pemenang",
+			"pemenang_berkontrak",
 		)
 
 		if targetURL == "" {
@@ -785,5 +790,4 @@ func scrapeNonTenderPemenang(client *http.Client, c *colly.Collector, ids []stri
 	c.Wait()
 
 	return pemenang
-
 }
