@@ -280,7 +280,8 @@ func main() {
 			//results = scrapeTenderDetails(client, c, ids)
 			_ = scrapeTenderPemenang(client, c, ids)
 		case "nontender":
-			results = scrapeNonTenderDetails(client, c, ids)
+			//results = scrapeNonTenderDetails(client, c, ids)
+			_ = scrapeNonTenderPemenang(client, c, ids)
 		case "pencatatan":
 			results = scrapePencatatanDetails(client, c, ids)
 		case "swakelola":

@@ -654,9 +654,8 @@ func scrapeSwakelolaDetails(client *http.Client, c *colly.Collector, ids []strin
 /*
 	bergantung bgt sama selector. pastiin selector sama semua lol. or tambahin if cases
 */
-func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string) string {
+func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string) []string {
 	category := "tender"
-	hasEmpty := false
 	var pemenang []string
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
@@ -718,9 +717,73 @@ func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string)
 
 	c.Wait()
 
-	if hasEmpty {
-		return "nil"
+	return pemenang
+
+}
+
+func scrapeNonTenderPemenang(client *http.Client, c *colly.Collector, ids []string) []string {
+	category := "nontender"
+	var pemenang []string
+
+	c.OnHTML("html", func(e *colly.HTMLElement) {
+		urlPath := e.Request.URL.Path
+		kode := extractKode(urlPath, "/evaluasinontender/")
+
+		detailTag := e.DOM.Find("table.table tr:last-child tr td:first-child")
+
+		if detailTag.Length() > 0 {
+			fmt.Printf(
+				"[%s] WINNER: %q\n",
+				kode,
+				strings.TrimSpace(detailTag.Text()),
+				)
+			return
+		}
+
+		fmt.Printf(
+			"[%s] NO WINNER CONTENT | status=%d | body=%d | title=%q\n",
+			kode,
+			e.Response.StatusCode,
+			len(e.Response.Body),
+			strings.TrimSpace(e.DOM.Find("title").Text()),
+			)
+
+		pemenang= append(pemenang, "kosong")
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Printf("[%s] error: %v\n", category, err)
+	})
+
+	for _, id := range ids {
+		targetURL := getPath(
+			category,
+			pemda,
+			id,
+			"pemenang",
+		)
+
+		if targetURL == "" {
+			printVerbose(
+				"[%s] skipping ID %s: no pemenang path",
+				category,
+				id,
+			)
+			continue
+		}
+
+		if err := c.Visit(targetURL); err != nil {
+			printVerbose(
+				"[%s] failed to visit %s: %v",
+				category,
+				targetURL,
+				err,
+			)
+		}
 	}
 
-	return ""
+	c.Wait()
+
+	return pemenang
+
 }

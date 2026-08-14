@@ -14,8 +14,8 @@ const (
 )
 
 var scrapeLimits = map[string]int{
-	"tender":     500000000,
-	"nontender":  0,
+	"tender":     -1,
+	"nontender":  50,
 	"swakelola":  0,
 	"pencatatan": 0,
 }
