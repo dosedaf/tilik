@@ -247,8 +247,11 @@ func main() {
 			category,
 			)
 
+
 		if limit := scrapeLimits[category]; limit > 0 && len(ids) > limit {
 			ids = ids[:limit]
+		} else if limit == 0{
+			ids = ids[:0] 
 		}
 
 		if err != nil {
@@ -274,7 +277,8 @@ func main() {
 
 		switch category {
 		case "tender":
-			results = scrapeTenderDetails(client, c, ids)
+			//results = scrapeTenderDetails(client, c, ids)
+			_ = scrapeTenderPemenang(client, c, ids)
 		case "nontender":
 			results = scrapeNonTenderDetails(client, c, ids)
 		case "pencatatan":

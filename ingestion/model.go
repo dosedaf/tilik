@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-var verbose = true
+var verbose = false
 
 const (
 	baseURL   = "https://spse.inaproc.id"
@@ -14,10 +14,10 @@ const (
 )
 
 var scrapeLimits = map[string]int{
-	"tender":     1,
-	"nontender":  1,
-	"swakelola":  1,
-	"pencatatan": 1,
+	"tender":     500000000,
+	"nontender":  0,
+	"swakelola":  0,
+	"pencatatan": 0,
 }
 
 type CategoryPaths struct {
@@ -33,7 +33,7 @@ var categoryPaths = map[string]CategoryPaths{
 		Portal:     "/lelang",
 		Pengumuman: "/lelang/%s/pengumumanlelang",
 		Peserta:    "/lelang/%s/peserta",
-		Pemenang:   "/evaluasilelang/%s/pemenang",
+		Pemenang:   "/evaluasi/%s/pemenang",
 		Dt:         "/dt/lelang",
 	},
 

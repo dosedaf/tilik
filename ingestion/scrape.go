@@ -15,22 +15,18 @@ import (
 
 // new collector each category?
 func extractKode(path, prefix string) string {
-	remaining := strings.TrimPrefix(path, prefix)
+    idx := strings.Index(path, prefix)
+    if idx == -1 {
+        return ""
+    }
 
-	if remaining == path {
-		return ""
-	}
+    remaining := path[idx+len(prefix):]
 
-	parts := strings.Split(remaining, "/")
-
-	if len(parts) == 0 {
-		return ""
-	}
-
-	return parts[0]
+    return strings.Split(remaining, "/")[0]
 }
 
 func newScraper(client *http.Client, category string) (*colly.Collector){
+	fmt.Println(getPath(category, pemda, "", "portal"))
 	c := colly.NewCollector(
 		colly.AllowedDomains("spse.inaproc.id"),
 		colly.UserAgent(userAgent),
@@ -653,4 +649,78 @@ func scrapeSwakelolaDetails(client *http.Client, c *colly.Collector, ids []strin
 	c.Wait()
 
 	return results
+}
+
+/*
+	bergantung bgt sama selector. pastiin selector sama semua lol. or tambahin if cases
+*/
+func scrapeTenderPemenang(client *http.Client, c *colly.Collector, ids []string) string {
+	category := "tender"
+	hasEmpty := false
+	var pemenang []string
+
+	c.OnHTML("html", func(e *colly.HTMLElement) {
+		urlPath := e.Request.URL.Path
+		kode := extractKode(urlPath, "/evaluasi/")
+
+		detailTag := e.DOM.Find("table.table tr:last-child tr td:first-child")
+
+		if detailTag.Length() > 0 {
+			fmt.Printf(
+				"[%s] WINNER: %q\n",
+				kode,
+				strings.TrimSpace(detailTag.Text()),
+				)
+			return
+		}
+
+		fmt.Printf(
+			"[%s] NO WINNER CONTENT | status=%d | body=%d | title=%q\n",
+			kode,
+			e.Response.StatusCode,
+			len(e.Response.Body),
+			strings.TrimSpace(e.DOM.Find("title").Text()),
+			)
+
+		pemenang= append(pemenang, "kosong")
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Printf("[%s] error: %v\n", category, err)
+	})
+
+	for _, id := range ids {
+		targetURL := getPath(
+			category,
+			pemda,
+			id,
+			"pemenang",
+		)
+
+		if targetURL == "" {
+			printVerbose(
+				"[%s] skipping ID %s: no pemenang path",
+				category,
+				id,
+			)
+			continue
+		}
+
+		if err := c.Visit(targetURL); err != nil {
+			printVerbose(
+				"[%s] failed to visit %s: %v",
+				category,
+				targetURL,
+				err,
+			)
+		}
+	}
+
+	c.Wait()
+
+	if hasEmpty {
+		return "nil"
+	}
+
+	return ""
 }
