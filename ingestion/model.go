@@ -117,6 +117,6 @@ type PencatatanDetail struct {
 
 type SwakelolaDetail struct {
 	TipePelaksana string
-	PelaksanaSwakelola string
+	Pelaksana string
 }
 

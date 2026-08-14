@@ -305,7 +305,8 @@ func main() {
 			continue
 		}
 
-		if category == "tender" {
+		switch category {
+		case "tender":
 			for i := range results {
 				if results[i].Tender.PemenangBerkontrak == "Tender Batal" {
 					continue
@@ -313,8 +314,19 @@ func main() {
 
 				results[i].Tender.PemenangBerkontrak = winner[results[i].Kode]
 			}
+		case "nontender":
+			for i := range results {
+				results[i].NonTender.PemenangBerkontrak = winner[results[i].Kode]
+			}
+		case "pencatatan":
+			for i := range results {
+				results[i].Pencatatan.PemenangBerkontrak = winner[results[i].Kode]
+			}
+		case "swakelola":
+			for i := range results {
+				results[i].Swakelola.Pelaksana = winner[results[i].Kode]
+			}
 		}
-
 
 		if err := exportToCSV(
 			results,
