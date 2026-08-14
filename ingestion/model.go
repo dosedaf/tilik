@@ -14,10 +14,10 @@ const (
 )
 
 var scrapeLimits = map[string]int{
-	"tender":     5,
-	"nontender":  5,
+	"tender":     0,
+	"nontender":  0,
+	"pencatatan": 5,
 	"swakelola":  0,
-	"pencatatan": 0,
 }
 
 type CategoryPaths struct {
@@ -51,7 +51,8 @@ var categoryPaths = map[string]CategoryPaths{
 	"pencatatan": {
 		Portal:     "/pencatatan",
 		Pengumuman: "/pencatatan/pengumumannonspk?id=%s",
-		PemenangBerkontrak:   "/pencatatan/%s/pengumumannonspkpemenang",
+		// https://spse.inaproc.id/slemankab/pencatatan/pengumumannonspkpemenang?id=10186219000
+		PemenangBerkontrak:   "/pencatatan/pengumumannonspkpemenang?id=%s",
 		Dt:         "/dt/nonspk",
 	},
 
@@ -112,7 +113,7 @@ type NonTenderDetail struct {
 type PencatatanDetail struct {
 	JenisPengadaan	string
 	MetodePengadaan string
-	PemenangBerkontrak string
+	PemenangBerkontrak []string
 }
 
 type SwakelolaDetail struct {

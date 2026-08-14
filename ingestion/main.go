@@ -282,17 +282,19 @@ func main() {
 		c2 := newScraper(client, category)
 
 		var results []Paket
-		var winner map[string]string
+		var pemenangBerkontrak map[string]string
+		var pemenangBerkontrakPencatatan map[string][]string
 
 		switch category {
 		case "tender":
 			results = scrapeTenderDetails(client, c, ids)
-			winner = scrapeTenderPemenangBerkontrak(client, c2, ids)
+			pemenangBerkontrak = scrapeTenderPemenangBerkontrak(client, c2, ids)
 		case "nontender":
 			results = scrapeNonTenderDetails(client, c, ids)
-			winner = scrapeNonTenderPemenangBerkontrak(client, c2, ids)
+			pemenangBerkontrak = scrapeNonTenderPemenangBerkontrak(client, c2, ids)
 		case "pencatatan":
 			results = scrapePencatatanDetails(client, c, ids)
+			pemenangBerkontrakPencatatan = scrapePencatatanPemenangBerkontrak(client, c2, ids)
 		case "swakelola":
 			results = scrapeSwakelolaDetails(client, c, ids)
 		}
@@ -312,20 +314,20 @@ func main() {
 					continue
 				}
 
-				results[i].Tender.PemenangBerkontrak = winner[results[i].Kode]
+				results[i].Tender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
 			}
 		case "nontender":
 			for i := range results {
-				results[i].NonTender.PemenangBerkontrak = winner[results[i].Kode]
+				results[i].NonTender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
 			}
 		case "pencatatan":
 			for i := range results {
-				results[i].Pencatatan.PemenangBerkontrak = winner[results[i].Kode]
+				results[i].Pencatatan.PemenangBerkontrak =  pemenangBerkontrakPencatatan[results[i].Kode]
 			}
-		case "swakelola":
-			for i := range results {
-				results[i].Swakelola.Pelaksana = winner[results[i].Kode]
-			}
+		// case "swakelola":
+		// 	for i := range results {
+		// 		results[i].Swakelola.Pelaksana = _[results[i].Kode]
+		// 	}
 		}
 
 		if err := exportToCSV(

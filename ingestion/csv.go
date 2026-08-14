@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"path/filepath"
 	"fmt"
+	"strings"
 	"os"
 	"strconv"
 	"time"
@@ -152,6 +153,7 @@ func exportToCSV(
 				d.URL,
 			}
 		case "pencatatan":
+			pemenangBerkontrak := strings.Join(d.Pencatatan.PemenangBerkontrak, ", ")
 			record = []string{
 				d.Kategori,
 				d.Kode,
@@ -162,6 +164,7 @@ func exportToCSV(
 				d.Pencatatan.MetodePengadaan,
 				d.Tahun,
 				strconv.FormatInt(d.Pagu, 10),
+				pemenangBerkontrak,
 				d.URL,
 			}
 		case "swakelola":
