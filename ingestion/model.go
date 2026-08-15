@@ -118,6 +118,11 @@ type PencatatanDetail struct {
 
 type SwakelolaDetail struct {
 	TipePelaksana string
-	Pelaksana []string
+	Pelaksana []Realisasi
 }
 
+type Realisasi struct{
+	Jenis string
+	Nilai string
+	Tanggal time.Time
+}

@@ -284,7 +284,7 @@ func main() {
 		var results []Paket
 		var pemenangBerkontrak map[string]string
 		var pemenangBerkontrakPencatatan map[string][]string
-		var pelaksanaSwakelola map[string][]string
+		var pelaksanaSwakelola map[string][]Realisasi
 
 		switch category {
 		case "tender":

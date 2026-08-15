@@ -858,9 +858,9 @@ func scrapePencatatanPemenangBerkontrak(client *http.Client, c *colly.Collector,
 	return pemenang
 }
 
-func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []string) map[string][]string {
+func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []string) map[string][]Realisasi {
 	category := "swakelola"
-	pemenang := make(map[string][]string)
+	pemenang := make(map[string][]Realisasi)
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		selector := "table.table:last-child tr:nth-child(even)"
@@ -868,21 +868,34 @@ func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []str
 		kode := extractKode(urlPath, "/pengumumanswakelolapelaksana/")
 		fmt.Println(kode)
 
-		var realisasi []string
+		var realisasiSlice []Realisasi
 
 		if e.DOM.Find(selector).Length() == 0  {
 			fmt.Println("no matching selector: ", selector)
-			pemenang[kode] = []string{"Tidak ada"}
+			pemenang[kode] = []Realisasi{}
 			return
 		}
 
 		e.ForEach(selector, func(_ int, e *colly.HTMLElement) {
-			fmt.Println("text: ", e.ChildText("td:nth-child(2)"))
-			realisasi = append(realisasi, e.ChildText("td:nth-child(2)"),
-				)
+			jenis := e.ChildText("td:nth-child(2)")
+			nilai := e.ChildText("td:nth-child(3)")
+			tanggal := e.ChildText("td:nth-child(4)")
+			parsedTanggal, err := time.Parse("02-01-2006", tanggal)
+			if err != nil {
+				fmt.Println("error parsing date:", err)
+				return
+			}
+
+			realisasi := Realisasi{
+				Jenis: jenis,
+				Nilai: nilai,
+				Tanggal: parsedTanggal,
+			}
+
+			realisasiSlice = append(realisasiSlice, realisasi)
 		})
 
-		pemenang[kode] = realisasi
+		pemenang[kode] = realisasiSlice
 	})
 
 	c.OnError(func(r *colly.Response, err error) {

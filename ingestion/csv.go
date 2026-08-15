@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+
 func exportToCSV(
 	data []Paket,
 	category string,
@@ -111,7 +112,7 @@ func exportToCSV(
 			"Pelaksana",
 			"URL",
 		}
-	}
+}
 
 	if err := writer.Write(headers); err != nil {
 		return err
@@ -169,7 +170,23 @@ func exportToCSV(
 				d.URL,
 			}
 		case "swakelola":
-			pelaksana := strings.Join(d.Swakelola.Pelaksana, ", ")
+			var pelaksanaSlice []string
+			num := 0
+			for i := range d.Swakelola.Pelaksana {
+				num++
+				p := d.Swakelola.Pelaksana[i]
+			str := fmt.Sprintf("%d. Jenis: %s\nNilai: %s\nTanggal: %s",
+					num,
+					p.Jenis,
+					p.Nilai,
+					p.Tanggal,
+					)
+
+				pelaksanaSlice = append(pelaksanaSlice, str)
+			}
+
+			pelaksana := strings.Join(pelaksanaSlice, "\n")
+
 			record = []string{
 				d.Kategori,
 				d.Kode,
