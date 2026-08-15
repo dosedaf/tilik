@@ -44,7 +44,7 @@ func newScraper(client *http.Client, category string) (*colly.Collector){
 
 	err = c.Limit(&colly.LimitRule{
 		DomainGlob:  "*spse.inaproc.id*",
-		Parallelism: 4,
+		Parallelism: 8,
 		Delay:       time.Second / 2,
 	})
 
@@ -866,10 +866,6 @@ func scrapePencatatanPemenangBerkontrak(client *http.Client, c *colly.Collector,
 
 	c.Wait()
 
-	for key, val := range pemenang {
-		fmt.Printf("key %s val %s\n", key, val)
-	}
-
 	return pemenang
 }
 
@@ -895,11 +891,19 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 			jenis := e.ChildText("td:nth-child(2)")
 			nilai := e.ChildText("td:nth-child(3)")
 			tanggal := e.ChildText("td:nth-child(4)")
+			
+			// DUMB QUICK FIX
+			// assign emptry string to tanggal if err is found
+			// FIX THIS LATER
+			var parsedTanggal time.Time
 
-			parsedTanggal, err := time.Parse("02-01-2006", tanggal)
-			if err != nil {
-				fmt.Println("error parsing date:", err)
-				return
+			if tanggal != "" {
+				var err error
+				parsedTanggal, err = time.Parse("02-01-2006", tanggal)
+
+				if err != nil {
+					fmt.Println("error parsing date:", err)
+				}
 			}
 
 			r := Realisasi{
@@ -948,10 +952,6 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 	}
 
 	c.Wait()
-
-	for key, val := range realisasiData {
-		fmt.Printf("key %s val %s\n", key, val)
-	}
 
 	return realisasiData
 }
@@ -1021,10 +1021,6 @@ func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []str
 	}
 
 	c.Wait()
-
-	for key, val := range pemenang {
-		fmt.Printf("key %s val %s\n", key, val)
-	}
 
 	return pemenang
 }
@@ -1106,10 +1102,6 @@ func scrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []str
 	}
 
 	c.Wait()
-
-	for key, val := range realisasiData {
-		fmt.Printf("key %s val %s\n", key, val)
-	}
 
 	return realisasiData
 }
