@@ -44,8 +44,8 @@ func newScraper(client *http.Client, category string) (*colly.Collector){
 
 	err = c.Limit(&colly.LimitRule{
 		DomainGlob:  "*spse.inaproc.id*",
-		Parallelism: 2,
-		Delay:       1 * time.Second,
+		Parallelism: 4,
+		Delay:       time.Second / 2,
 	})
 
 	if err != nil {
