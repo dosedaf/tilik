@@ -155,7 +155,23 @@ func exportToCSV(
 				d.URL,
 			}
 		case "pencatatan":
-			pemenangBerkontrak := strings.Join(d.Pencatatan.PemenangBerkontrak, ", ")
+			var strSlice []string
+			num := 0
+			for i := range d.Pencatatan.Realisasi {
+				num++
+				p := d.Pencatatan.Realisasi[i]
+			str := fmt.Sprintf("%d. Jenis: %s\nNilai: %s\nTanggal: %s",
+					num,
+					p.Jenis,
+					p.Nilai,
+					p.Tanggal,
+					)
+
+				strSlice = append(strSlice, str)
+			}
+
+			realisasi := strings.Join(strSlice, "\n")
+
 			record = []string{
 				d.Kategori,
 				d.Kode,
@@ -166,15 +182,19 @@ func exportToCSV(
 				d.Pencatatan.MetodePengadaan,
 				d.Tahun,
 				strconv.FormatInt(d.Pagu, 10),
-				pemenangBerkontrak,
+				realisasi,
 				d.URL,
 			}
 		case "swakelola":
-			var pelaksanaSlice []string
+			var strSlice []string
+			var realisasi string
 			num := 0
-			for i := range d.Swakelola.Pelaksana {
+			if d.Swakelola.Realisasi == nil {
+				realisasi = "Tidak ada"
+			} else {
+			for i := range d.Swakelola.Realisasi {
 				num++
-				p := d.Swakelola.Pelaksana[i]
+				p := d.Swakelola.Realisasi[i]
 			str := fmt.Sprintf("%d. Jenis: %s\nNilai: %s\nTanggal: %s",
 					num,
 					p.Jenis,
@@ -182,10 +202,11 @@ func exportToCSV(
 					p.Tanggal,
 					)
 
-				pelaksanaSlice = append(pelaksanaSlice, str)
+				strSlice = append(strSlice, str)
 			}
 
-			pelaksana := strings.Join(pelaksanaSlice, "\n")
+			realisasi = strings.Join(strSlice, "\n")
+			}
 
 			record = []string{
 				d.Kategori,
@@ -195,7 +216,7 @@ func exportToCSV(
 				d.Satker,
 				d.Tahun,
 				strconv.FormatInt(d.Pagu, 10),
-				pelaksana,
+				realisasi,
 				d.URL,
 			}
 

@@ -16,7 +16,7 @@ const (
 var scrapeLimits = map[string]int{
 	"tender":     0,
 	"nontender":  0,
-	"pencatatan": 0,
+	"pencatatan": 5,
 	"swakelola":  5,
 }
 
@@ -114,11 +114,13 @@ type PencatatanDetail struct {
 	JenisPengadaan	string
 	MetodePengadaan string
 	PemenangBerkontrak []string
+	Realisasi []Realisasi
 }
 
 type SwakelolaDetail struct {
 	TipePelaksana string
 	Pelaksana []Realisasi
+	Realisasi []Realisasi
 }
 
 type Realisasi struct{

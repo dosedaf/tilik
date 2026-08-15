@@ -283,8 +283,7 @@ func main() {
 
 		var results []Paket
 		var pemenangBerkontrak map[string]string
-		var pemenangBerkontrakPencatatan map[string][]string
-		var pelaksanaSwakelola map[string][]Realisasi
+		var realisasi map[string][]Realisasi
 
 		switch category {
 		case "tender":
@@ -295,10 +294,10 @@ func main() {
 			pemenangBerkontrak = scrapeNonTenderPemenangBerkontrak(client, c2, ids)
 		case "pencatatan":
 			results = scrapePencatatanDetails(client, c, ids)
-			pemenangBerkontrakPencatatan = scrapePencatatanPemenangBerkontrak(client, c2, ids)
+			realisasi = scrapePencatatanRealisasi(client, c2, ids)
 		case "swakelola":
 			results = scrapeSwakelolaDetails(client, c, ids)
-			pelaksanaSwakelola = scrapeSwakelolaPelaksana(client, c2, ids)
+			realisasi = scrapeSwakelolaRealisasi(client, c2, ids)
 		}
 
 		if len(results) == 0 {
@@ -324,11 +323,11 @@ func main() {
 			}
 		case "pencatatan":
 			for i := range results {
-				results[i].Pencatatan.PemenangBerkontrak =  pemenangBerkontrakPencatatan[results[i].Kode]
+				results[i].Pencatatan.Realisasi =  realisasi[results[i].Kode]
 			}
 		case "swakelola":
 			for i := range results {
-				results[i].Swakelola.Pelaksana = pelaksanaSwakelola[results[i].Kode]
+				results[i].Swakelola.Realisasi = realisasi[results[i].Kode]
 			}
 		}
 

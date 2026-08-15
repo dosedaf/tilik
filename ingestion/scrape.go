@@ -858,7 +858,152 @@ func scrapePencatatanPemenangBerkontrak(client *http.Client, c *colly.Collector,
 	return pemenang
 }
 
-func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []string) map[string][]Realisasi {
+func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]Realisasi {
+	category := "pencatatan"
+	realisasiData := make(map[string][]Realisasi)
+
+	c.OnHTML("html", func(e *colly.HTMLElement) {
+		selector := "table.table:last-child tr:nth-child(even)"
+		kode := e.Request.URL.Query().Get("id")
+
+		var realisasi []Realisasi
+
+		if e.DOM.Find(selector).Length() == 0  {
+			realisasiData[kode] = []Realisasi{}
+			return
+		}
+
+		e.ForEach(selector, func(_ int, e *colly.HTMLElement) {
+			jenis := e.ChildText("td:nth-child(2)")
+			nilai := e.ChildText("td:nth-child(3)")
+			tanggal := e.ChildText("td:nth-child(4)")
+
+			parsedTanggal, err := time.Parse("02-01-2006", tanggal)
+			if err != nil {
+				fmt.Println("error parsing date:", err)
+				return
+			}
+
+			r := Realisasi{
+				Jenis: jenis,
+				Nilai: nilai,
+				Tanggal: parsedTanggal,
+			}
+
+			realisasi = append(realisasi, r)
+		})
+
+		realisasiData[kode] = realisasi
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Printf("[%s] error: %v\n", category, err)
+	})
+
+	for _, id := range ids {
+		targetURL := getPath(
+			category,
+			pemda,
+			id,
+			"pemenang_berkontrak",
+		)
+
+		if targetURL == "" {
+			printVerbose(
+				"[%s] skipping ID %s: no pemenang path",
+				category,
+				id,
+			)
+			continue
+		}
+
+		if err := c.Visit(targetURL); err != nil {
+			printVerbose(
+				"[%s] failed to visit %s: %v",
+				category,
+				targetURL,
+				err,
+			)
+		}
+	}
+
+	c.Wait()
+
+	for key, val := range realisasiData {
+		fmt.Printf("key %s val %s\n", key, val)
+	}
+
+	return realisasiData
+}
+
+func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []string) map[string][]string {
+	category := "swakelola"
+	pemenang := make(map[string][]string)
+
+	c.OnHTML("html", func(e *colly.HTMLElement) {
+		selector := "table.table:last-child tr:nth-child(even)"
+		urlPath := e.Request.URL.Path
+		kode := extractKode(urlPath, "/pengumumanswakelolapelaksana/")
+		fmt.Println(kode)
+
+		var realisasi []string
+
+		if e.DOM.Find(selector).Length() == 0  {
+			fmt.Println("no matching selector: ", selector)
+			pemenang[kode] = []string{"Tidak ada"}
+			return
+		}
+
+		e.ForEach(selector, func(_ int, e *colly.HTMLElement) {
+			fmt.Println("text: ", e.ChildText("td:nth-child(2)"))
+			realisasi = append(realisasi, e.ChildText("td:nth-child(2)"),
+				)
+		})
+
+		pemenang[kode] = realisasi
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Printf("[%s] error: %v\n", category, err)
+	})
+
+	for _, id := range ids {
+		targetURL := getPath(
+			category,
+			pemda,
+			id,
+			"pemenang_berkontrak",
+		)
+
+		if targetURL == "" {
+			printVerbose(
+				"[%s] skipping ID %s: no pemenang path",
+				category,
+				id,
+			)
+			continue
+		}
+
+		if err := c.Visit(targetURL); err != nil {
+			printVerbose(
+				"[%s] failed to visit %s: %v",
+				category,
+				targetURL,
+				err,
+			)
+		}
+	}
+
+	c.Wait()
+
+	for key, val := range pemenang {
+		fmt.Printf("key %s val %s\n", key, val)
+	}
+
+	return pemenang
+}
+
+func scrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]Realisasi {
 	category := "swakelola"
 	pemenang := make(map[string][]Realisasi)
 
