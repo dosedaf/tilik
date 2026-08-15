@@ -1,12 +1,13 @@
 define MVP nya apa (SPSE -> fraud, monopoly detection dll?)
 MVP sleman
 bersih2 data misal lokasi, apbd dobel2
-extract lokasi dari nama contoh: ODTW Tlogo Putri di nama Tender
+extract lokasi dari nama contoh: ODTW Tlogo Putri di nama paket
+detailed realisasi pencatatan dan swakelola
 rewrite scraper (performance + readability)
 loop over specific years
 categorize yg udh realisasi dll mungkin?
-pastiin spse itu update beneran ga sih?
-kok data dibawah taun 2022 an gada ya?
+seupdate apa spse
+kok data dibawah taun 2022 an gada
 fetch pemenang
 
 done

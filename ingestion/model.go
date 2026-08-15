@@ -16,8 +16,8 @@ const (
 var scrapeLimits = map[string]int{
 	"tender":     0,
 	"nontender":  0,
-	"pencatatan": 5,
-	"swakelola":  0,
+	"pencatatan": 0,
+	"swakelola":  5,
 }
 
 type CategoryPaths struct {
@@ -60,7 +60,7 @@ var categoryPaths = map[string]CategoryPaths{
 		Portal:     "/swakelola",
 		Pengumuman: "/swakelola/%s/pengumuman",
 		Peserta:    "",
-		PemenangBerkontrak:   "/swakelola/pengumumanswakelolapelaksana/",
+		PemenangBerkontrak:   "/swakelola/pengumumanswakelolapelaksana/%s",
 		Dt:         "/dt/swakelola",
 	},
 }
@@ -118,6 +118,6 @@ type PencatatanDetail struct {
 
 type SwakelolaDetail struct {
 	TipePelaksana string
-	Pelaksana string
+	Pelaksana []string
 }
 

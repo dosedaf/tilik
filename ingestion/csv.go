@@ -108,6 +108,7 @@ func exportToCSV(
 			// "Tipe Pelaksanaan Swakelola",
 			"Tahun Anggaran",
 			"Nilai Pagu Paket (dalam Rupiah)",
+			"Pelaksana",
 			"URL",
 		}
 	}
@@ -168,6 +169,7 @@ func exportToCSV(
 				d.URL,
 			}
 		case "swakelola":
+			pelaksana := strings.Join(d.Swakelola.Pelaksana, ", ")
 			record = []string{
 				d.Kategori,
 				d.Kode,
@@ -176,6 +178,7 @@ func exportToCSV(
 				d.Satker,
 				d.Tahun,
 				strconv.FormatInt(d.Pagu, 10),
+				pelaksana,
 				d.URL,
 			}
 
