@@ -802,6 +802,7 @@ func scrapeNonTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, 
 	return pemenang
 }
 
+//unused
 func scrapePencatatanPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string][]string {
 	category := "pencatatan"
 	pemenang := make(map[string][]string)
@@ -902,14 +903,22 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 				parsedTanggal, err = time.Parse("02-01-2006", tanggal)
 
 				if err != nil {
-					fmt.Println("error parsing date:", err)
+					fmt.Printf("[%s] error parsing date:%s \n", kode, err)
 				}
 			}
+
+			dateOnly := time.Date(
+				parsedTanggal.Day(),
+				parsedTanggal.Month(),
+				parsedTanggal.Year(),
+				0,0,0,0,
+				parsedTanggal.Location(),
+				)
 
 			r := Realisasi{
 				Jenis: jenis,
 				Nilai: nilai,
-				Tanggal: parsedTanggal,
+				Tanggal: dateOnly,
 			}
 
 			realisasi = append(realisasi, r)
@@ -956,7 +965,7 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 	return realisasiData
 }
 
-// ga dipake
+//unused
 func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []string) map[string][]string {
 	category := "swakelola"
 	pemenang := make(map[string][]string)
@@ -1052,14 +1061,22 @@ func scrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []str
 			tanggal := e.ChildText("td:nth-child(4)")
 			parsedTanggal, err := time.Parse("02-01-2006", tanggal)
 			if err != nil {
-				fmt.Println("error parsing date:", err)
+				fmt.Printf("[%s] error parsing date:%s \n", kode, err)
 				return
 			}
+
+			dateOnly := time.Date(
+				parsedTanggal.Day(),
+				parsedTanggal.Month(),
+				parsedTanggal.Year(),
+				0,0,0,0,
+				parsedTanggal.Location(),
+				)
 
 			r := Realisasi{
 				Jenis: jenis,
 				Nilai: nilai,
-				Tanggal: parsedTanggal,
+				Tanggal: dateOnly,
 			}
 
 			realisasi = append(realisasi, r)
