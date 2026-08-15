@@ -658,6 +658,7 @@ func scrapeSwakelolaDetails(client *http.Client, c *colly.Collector, ids []strin
 func scrapeTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
 	category := "tender"
 	pemenang := make(map[string]string)
+	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		urlPath := e.Request.URL.Path
@@ -666,25 +667,29 @@ func scrapeTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids
 		detailTag := e.DOM.Find("table.table tr:last-child tr td:first-child")
 
 		if detailTag.Length() > 0 {
-			fmt.Printf(
-				"[%s] WINNER: %q\n",
-				kode,
-				strings.TrimSpace(detailTag.Text()),
-				)
+			// fmt.Printf(
+			// 	"[%s] WINNER: %q\n",
+			// 	kode,
+			// 	strings.TrimSpace(detailTag.Text()),
+			// 	)
 
+			mu.Lock()
 			pemenang[kode] = strings.TrimSpace(detailTag.Text())
+			mu.Unlock()
 			return 
 		}
 
-		fmt.Printf(
-			"[%s] NO WINNER CONTENT | status=%d | body=%d | title=%q\n",
-			kode,
-			e.Response.StatusCode,
-			len(e.Response.Body),
-			strings.TrimSpace(e.DOM.Find("title").Text()),
-			)
+		// fmt.Printf(
+		// 	"[%s] NO WINNER CONTENT | status=%d | body=%d | title=%q\n",
+		// 	kode,
+		// 	e.Response.StatusCode,
+		// 	len(e.Response.Body),
+		// 	strings.TrimSpace(e.DOM.Find("title").Text()),
+		// 	)
 
+		mu.Lock()
 		pemenang[kode] = "Tidak ada"
+		mu.Unlock()
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -727,6 +732,7 @@ func scrapeTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids
 func scrapeNonTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
 	category := "nontender"
 	pemenang := make(map[string]string)
+	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		urlPath := e.Request.URL.Path
@@ -735,25 +741,29 @@ func scrapeNonTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, 
 		detailTag := e.DOM.Find("table.table tr:last-child tr td:first-child")
 
 		if detailTag.Length() > 0 {
-			fmt.Printf(
-				"[%s] WINNER: %q\n",
-				kode,
-				strings.TrimSpace(detailTag.Text()),
-				)
+			// fmt.Printf(
+			// 	"[%s] WINNER: %q\n",
+			// 	kode,
+			// 	strings.TrimSpace(detailTag.Text()),
+			// 	)
 
+			mu.Lock()
 			pemenang[kode] = strings.TrimSpace(detailTag.Text())
+			mu.Unlock()
 			return
 		}
 
-		fmt.Printf(
-			"[%s] NO WINNER CONTENT | status=%d | body=%d | title=%q\n",
-			kode,
-			e.Response.StatusCode,
-			len(e.Response.Body),
-			strings.TrimSpace(e.DOM.Find("title").Text()),
-			)
+		// fmt.Printf(
+		// 	"[%s] NO WINNER CONTENT | status=%d | body=%d | title=%q\n",
+		// 	kode,
+		// 	e.Response.StatusCode,
+		// 	len(e.Response.Body),
+		// 	strings.TrimSpace(e.DOM.Find("title").Text()),
+		// 	)
 
+		mu.Lock()
 		pemenang[kode] = "Tidak ada"
+		mu.Unlock()
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -795,27 +805,32 @@ func scrapeNonTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, 
 func scrapePencatatanPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string][]string {
 	category := "pencatatan"
 	pemenang := make(map[string][]string)
+	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		selector := "table.table:last-child tr:nth-child(even)"
 		kode := e.Request.URL.Query().Get("id")
-		fmt.Println(kode)
+		// fmt.Println(kode)
 
 		var realisasi []string
 
 		if e.DOM.Find(selector).Length() == 0  {
-			fmt.Println("no matching selector: ", selector)
+			//fmt.Println("no matching selector: ", selector)
+			mu.Lock()
 			pemenang[kode] = []string{"Tidak ada"}
+			mu.Unlock()
 			return
 		}
 
 		e.ForEach(selector, func(_ int, e *colly.HTMLElement) {
-			fmt.Println("text: ", e.ChildText("td:nth-child(2)"))
+			//fmt.Println("text: ", e.ChildText("td:nth-child(2)"))
 			realisasi = append(realisasi, e.ChildText("td:nth-child(2)"),
 				)
 		})
 
+		mu.Lock()
 		pemenang[kode] = realisasi
+		mu.Unlock()
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -861,6 +876,7 @@ func scrapePencatatanPemenangBerkontrak(client *http.Client, c *colly.Collector,
 func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]Realisasi {
 	category := "pencatatan"
 	realisasiData := make(map[string][]Realisasi)
+	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		selector := "table.table:last-child tr:nth-child(even)"
@@ -869,7 +885,9 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 		var realisasi []Realisasi
 
 		if e.DOM.Find(selector).Length() == 0  {
+			mu.Lock()
 			realisasiData[kode] = []Realisasi{}
+			mu.Unlock()
 			return
 		}
 
@@ -893,7 +911,9 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 			realisasi = append(realisasi, r)
 		})
 
+		mu.Lock()
 		realisasiData[kode] = realisasi
+		mu.Unlock()
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -936,31 +956,37 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 	return realisasiData
 }
 
+// ga dipake
 func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []string) map[string][]string {
 	category := "swakelola"
 	pemenang := make(map[string][]string)
+	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		selector := "table.table:last-child tr:nth-child(even)"
 		urlPath := e.Request.URL.Path
 		kode := extractKode(urlPath, "/pengumumanswakelolapelaksana/")
-		fmt.Println(kode)
+		//fmt.Println(kode)
 
 		var realisasi []string
 
 		if e.DOM.Find(selector).Length() == 0  {
-			fmt.Println("no matching selector: ", selector)
+			//fmt.Println("no matching selector: ", selector)
+			mu.Lock()
 			pemenang[kode] = []string{"Tidak ada"}
+			mu.Unlock()
 			return
 		}
 
 		e.ForEach(selector, func(_ int, e *colly.HTMLElement) {
-			fmt.Println("text: ", e.ChildText("td:nth-child(2)"))
+			//fmt.Println("text: ", e.ChildText("td:nth-child(2)"))
 			realisasi = append(realisasi, e.ChildText("td:nth-child(2)"),
 				)
 		})
 
+		mu.Lock()
 		pemenang[kode] = realisasi
+		mu.Unlock()
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -1005,19 +1031,22 @@ func scrapeSwakelolaPelaksana(client *http.Client, c *colly.Collector, ids []str
 
 func scrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]Realisasi {
 	category := "swakelola"
-	pemenang := make(map[string][]Realisasi)
+	realisasiData := make(map[string][]Realisasi)
+	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		selector := "table.table:last-child tr:nth-child(even)"
 		urlPath := e.Request.URL.Path
 		kode := extractKode(urlPath, "/pengumumanswakelolapelaksana/")
-		fmt.Println(kode)
+		//fmt.Println(kode)
 
-		var realisasiSlice []Realisasi
+		var realisasi []Realisasi
 
 		if e.DOM.Find(selector).Length() == 0  {
-			fmt.Println("no matching selector: ", selector)
-			pemenang[kode] = []Realisasi{}
+			//fmt.Println("no matching selector: ", selector)
+			mu.Lock()
+			realisasiData[kode] = []Realisasi{}
+			mu.Unlock()
 			return
 		}
 
@@ -1031,16 +1060,18 @@ func scrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []str
 				return
 			}
 
-			realisasi := Realisasi{
+			r := Realisasi{
 				Jenis: jenis,
 				Nilai: nilai,
 				Tanggal: parsedTanggal,
 			}
 
-			realisasiSlice = append(realisasiSlice, realisasi)
+			realisasi = append(realisasi, r)
 		})
 
-		pemenang[kode] = realisasiSlice
+		mu.Lock()
+		realisasiData[kode] = realisasi
+		mu.Unlock()
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -1076,9 +1107,9 @@ func scrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []str
 
 	c.Wait()
 
-	for key, val := range pemenang {
+	for key, val := range realisasiData {
 		fmt.Printf("key %s val %s\n", key, val)
 	}
 
-	return pemenang
+	return realisasiData
 }

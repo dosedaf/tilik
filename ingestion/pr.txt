@@ -1,0 +1,3 @@
+gajelas batas antara pemenang berkontrak sama realisasi untuk pencatatan dan swakelola
+urutan run kode aneh. misal limit 0 kenapa tetep di run
+kode messy af bruh. kapan mau refactor? kalo nunggu lama2 bakal numpuk. kalo dilakuin sekarang stalling feature. fuck
