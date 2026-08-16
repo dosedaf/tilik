@@ -112,7 +112,7 @@ func exportToCSV(
 			"Pelaksana",
 			"URL",
 		}
-}
+	}
 
 	if err := writer.Write(headers); err != nil {
 		return err
@@ -156,57 +156,78 @@ func exportToCSV(
 			}
 		case "pencatatan":
 			var strSlice []string
+			strSlice = []string{}
+			realisasi := ""
+			ada := false
 			num := 0
-			for i := range d.Pencatatan.Realisasi {
-				num++
-				p := d.Pencatatan.Realisasi[i]
-			str := fmt.Sprintf("%d. Jenis: %s\nNilai: %s\nTanggal: %s",
-					num,
-					p.Jenis,
-					p.Nilai,
-					p.Tanggal,
-					)
 
-				strSlice = append(strSlice, str)
+			if len(d.Pencatatan.Realisasi) == 0 {
+				ada = false
+			} else {
+				ada = true
+				for i := range d.Pencatatan.Realisasi {
+					num++
+					p := d.Pencatatan.Realisasi[i]
+					str := fmt.Sprintf("%d. Jenis: %s\nNilai: %s\nTanggal: %s",
+						num,
+						p.Jenis,
+						p.Nilai,
+						p.Tanggal,
+						)
+
+					strSlice = append(strSlice, str)
+				}
 			}
 
-			realisasi := strings.Join(strSlice, "\n")
+				if ada {
+					realisasi = strings.Join(strSlice, "\n")
+				} else {
+					realisasi = "Tidak ada"
+				}
 
-			record = []string{
-				d.Kategori,
-				d.Kode,
-				d.Nama,
-				d.Instansi,
-				d.Satker,
-				d.Pencatatan.JenisPengadaan,
-				d.Pencatatan.MetodePengadaan,
-				d.Tahun,
-				strconv.FormatInt(d.Pagu, 10),
-				realisasi,
-				d.URL,
-			}
+				record = []string{
+					d.Kategori,
+					d.Kode,
+					d.Nama,
+					d.Instansi,
+					d.Satker,
+					d.Pencatatan.JenisPengadaan,
+					d.Pencatatan.MetodePengadaan,
+					d.Tahun,
+					strconv.FormatInt(d.Pagu, 10),
+					realisasi,
+					d.URL,
+				}
 		case "swakelola":
 			var strSlice []string
-			var realisasi string
+			strSlice = []string{}
+			realisasi := ""
+			ada := false
 			num := 0
-			if d.Swakelola.Realisasi == nil {
-				realisasi = "Tidak ada"
+
+			if len(d.Swakelola.Realisasi) == 0 {
+				ada = false
 			} else {
-			for i := range d.Swakelola.Realisasi {
-				num++
-				p := d.Swakelola.Realisasi[i]
-			str := fmt.Sprintf("%d. Jenis: %s\nNilai: %s\nTanggal: %s",
-					num,
-					p.Jenis,
-					p.Nilai,
-					p.Tanggal,
-					)
+				ada = true
+				for i := range d.Swakelola.Realisasi {
+					num++
+					p := d.Swakelola.Realisasi[i]
+					str := fmt.Sprintf("%d. Jenis: %s\nNilai: %s\nTanggal: %s",
+						num,
+						p.Jenis,
+						p.Nilai,
+						p.Tanggal,
+						)
 
-				strSlice = append(strSlice, str)
+					strSlice = append(strSlice, str)
+				}
 			}
 
-			realisasi = strings.Join(strSlice, "\n")
-			}
+				if ada {
+					realisasi = strings.Join(strSlice, "\n")
+				} else {
+					realisasi = "Tidak ada"
+				}
 
 			record = []string{
 				d.Kategori,

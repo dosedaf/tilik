@@ -876,7 +876,7 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
-		selector := "table.table:last-child tr:nth-child(even)"
+		selector := ".bs-callout-info + table.table-sm tr:has(td[align=\"center\"])"
 		kode := e.Request.URL.Query().Get("id")
 
 		var realisasi []Realisasi
@@ -908,9 +908,9 @@ func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []st
 			}
 
 			dateOnly := time.Date(
-				parsedTanggal.Day(),
-				parsedTanggal.Month(),
 				parsedTanggal.Year(),
+				parsedTanggal.Month(),
+				parsedTanggal.Day(),
 				0,0,0,0,
 				parsedTanggal.Location(),
 				)
@@ -1040,7 +1040,7 @@ func scrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []str
 	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
-		selector := "table.table:last-child tr:nth-child(even)"
+		selector := ".bs-callout-info + table.table-sm tr:has(td[align=\"center\"])"
 		urlPath := e.Request.URL.Path
 		kode := extractKode(urlPath, "/pengumumanswakelolapelaksana/")
 		//fmt.Println(kode)
