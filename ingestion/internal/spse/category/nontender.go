@@ -1,35 +1,37 @@
-package main
+package category
 
 import (
 	"strings"
+	"ingestion/internal/spse/model"
+	"ingestion/util"
 )
 
-func nonTenderConfig() ScraperConfig {
+func NonTenderConfig() ScraperConfig {
 	return ScraperConfig{
 		Category:    "nontender",
 		KodePrefix:  KodePrefix{
 			Detail: "/nontender/",
 			Evaluasi: "/evaluasinontender/",
 		},
-		InitDetail: func(url string) Paket {
-			return Paket{Kategori: "nontender", URL: url, NonTender: &NonTenderDetail{}}
+		InitDetail: func(url string) model.Paket {
+			return model.Paket{Kategori: "nontender", URL: url, NonTender: &model.NonTenderDetail{}}
 		},
 		FieldRules: []FieldRule{
 			{
 				Match: func(k string) bool { return strings.EqualFold(k, "kode paket") },
-				Handle: func(d *Paket, v string) { d.Kode = v },
+				Handle: func(d *model.Paket, v string) { d.Kode = v },
 			},
 			{
 				Match: func(k string) bool { return strings.EqualFold(k, "nama paket") },
-				Handle: func(d *Paket, v string) { d.Nama = v },
+				Handle: func(d *model.Paket, v string) { d.Nama = v },
 			},
 			{
 				Match:  func(k string) bool { return strings.Contains(k, "k/l/pd") },
-				Handle: func(d *Paket, v string) { d.Instansi = v },
+				Handle: func(d *model.Paket, v string) { d.Instansi = v },
 			},
 			{
 				Match: func(k string) bool { return strings.EqualFold(k, "satuan kerja") },
-				Handle: func(d *Paket, v string) {
+				Handle: func(d *model.Paket, v string) {
 					d.Satker = v
 					if v == "1.02.0.00.0.00.01.0000" {
 						d.Satker = "Dinas Kesehatan"
@@ -38,22 +40,22 @@ func nonTenderConfig() ScraperConfig {
 			},
 			{
 				Match:  func(k string) bool { return strings.EqualFold(k, "jenis pengadaan") },
-				Handle: func(d *Paket, v string) { d.NonTender.JenisPengadaan = v },
+				Handle: func(d *model.Paket, v string) { d.NonTender.JenisPengadaan = v },
 			},
 			{
 				Match:  func(k string) bool { return strings.EqualFold(k, "metode pengadaan") },
-				Handle: func(d *Paket, v string) { d.NonTender.MetodePengadaan = v },
+				Handle: func(d *model.Paket, v string) { d.NonTender.MetodePengadaan = v },
 			},
 			{
 				Match:  func(k string) bool { return strings.Contains(k, "tahun anggaran") },
-				Handle: func(d *Paket, v string) { d.Tahun = v },
+				Handle: func(d *model.Paket, v string) { d.Tahun = v },
 			},
 			{
 				Match: func(k string) bool { return strings.Contains(k, "pagu") },
-				Handle: func(d *Paket, v string) {
-					numbers, err := splitNumbers(v)
+				Handle: func(d *model.Paket, v string) {
+					numbers, err := util.SplitNumbers(v)
 					if err != nil {
-						printVerbose("[tender] failed to parse pagu: %v", err)
+						util.PrintVerbose("[tender] failed to parse pagu: %v", err)
 						return
 					}
 					if len(numbers) >= 1 {
@@ -66,7 +68,7 @@ func nonTenderConfig() ScraperConfig {
 			},
 			{
 				Match:  func(k string) bool { return strings.Contains(k, "lokasi") },
-				Handle: func(d *Paket, v string) { d.NonTender.Lokasi = v },
+				Handle: func(d *model.Paket, v string) { d.NonTender.Lokasi = v },
 			},
 		},
 	}

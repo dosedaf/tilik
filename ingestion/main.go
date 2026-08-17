@@ -11,73 +11,27 @@ import (
 	"regexp"
 	"time"
 	"strings"
+
+	"ingestion/internal/spse"
+	"ingestion/internal/spse/model"
+	"ingestion/util"
 )
 
-func getPath(category, pemda, kode, page string) string {
-	paths, ok := categoryPaths[category]
-	if !ok {
-		return ""
-	}
-
-	var path string
-
-	switch page {
-	case "portal":
-		path = paths.Portal
-
-	case "dt":
-		path = paths.Dt
-
-	case "pengumuman":
-		if paths.Pengumuman == "" || kode == "" {
-			return ""
-		}
-
-		path = fmt.Sprintf(paths.Pengumuman, kode)
-
-	case "peserta":
-		if paths.Peserta == "" || kode == "" {
-			return ""
-		}
-
-		path = fmt.Sprintf(paths.Peserta, kode)
-
-	case "pemenang":
-		if paths.Pemenang == "" || kode == "" {
-			return ""
-		}
-
-		path = fmt.Sprintf(paths.Pemenang, kode)
-
-	case "pemenang_berkontrak":
-		if paths.PemenangBerkontrak == "" || kode == "" {
-			return ""
-		}
-
-		path = fmt.Sprintf(paths.PemenangBerkontrak, kode)
-
-	default:
-		return ""
-	}
-
-	return fmt.Sprintf("%s/%s%s", baseURL, pemda, path)
-}
-
 func getSessionAndToken(client *http.Client, category string) (string, error) {
-	reqURL := getPath(category, pemda, "", "portal")
+	reqURL := spse.GetPath(category, model.Pemda, "", "portal")
 
 	if reqURL == "" {
 		return "", fmt.Errorf("invalid category: %s", category)
 	}
 
-	printVerbose("[%s] GET %s", category, reqURL)
+	util.PrintVerbose("[%s] GET %s", category, reqURL)
 
 	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		return "", err
 	}
 
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", model.UserAgent)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -85,7 +39,7 @@ func getSessionAndToken(client *http.Client, category string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	printVerbose(
+	util.PrintVerbose(
 		"[%s] HTTP/1.1 %d %s",
 		category,
 		resp.StatusCode,
@@ -110,7 +64,7 @@ func getSessionAndToken(client *http.Client, category string) (string, error) {
 			)
 	}
 
-	printVerbose("[%s] authenticityToken found", category)
+	util.PrintVerbose("[%s] authenticityToken found", category)
 
 	return matches[1], nil
 }
@@ -120,15 +74,15 @@ func fetchIDs(
 	token string,
 	category string,
 ) ([]string, error) {
-	apiURL := getPath(category, pemda, "", "dt")
+	apiURL := spse.GetPath(category, model.Pemda, "", "dt")
 
 	if apiURL == "" {
 		return nil, fmt.Errorf("invalid DT path for category %s", category)
 	}
 
-	apiURL += "?tahun=" + url.QueryEscape(year)
+	apiURL += "?tahun=" + url.QueryEscape(model.Year)
 
-	printVerbose("[%s] POST %s", category, apiURL)
+	util.PrintVerbose("[%s] POST %s", category, apiURL)
 
 	formData := url.Values{}
 
@@ -151,7 +105,7 @@ func fetchIDs(
 		"application/x-www-form-urlencoded; charset=UTF-8",
 		)
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", model.UserAgent)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -167,14 +121,14 @@ func fetchIDs(
 			)
 	}
 
-	printVerbose(
+	util.PrintVerbose(
 		"[%s] HTTP/1.1 %d %s",
 		category,
 		resp.StatusCode,
 		http.StatusText(resp.StatusCode),
 		)
 
-	var dtResp DTResponse
+	var dtResp model.DTResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&dtResp); err != nil {
 		return nil, err
@@ -199,7 +153,7 @@ func fetchIDs(
 		}
 	}
 
-	printVerbose(
+	util.PrintVerbose(
 		"[%s] payload extracted: %d records found",
 		category,
 		len(ids),
@@ -212,7 +166,7 @@ func main() {
 	jar, err := cookiejar.New(nil)
 
 	if err != nil {
-		printVerbose("FATAL: %v", err)
+		util.PrintVerbose("FATAL: %v", err)
 		os.Exit(1)
 	}
 
@@ -229,10 +183,10 @@ func main() {
 	}
 
 	for _, category := range categories {
-		printVerbose("")
-		printVerbose("==============================")
-		printVerbose("CATEGORY: %s", category)
-		printVerbose("==============================")
+		util.PrintVerbose("")
+		util.PrintVerbose("==============================")
+		util.PrintVerbose("CATEGORY: %s", category)
+		util.PrintVerbose("==============================")
 
 		token, err := getSessionAndToken(
 			client,
@@ -240,7 +194,7 @@ func main() {
 			)
 
 		if err != nil {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] FATAL: %v",
 				category,
 				err,
@@ -254,15 +208,14 @@ func main() {
 			category,
 			)
 
-
-		if limit := scrapeLimits[category]; limit > 0 && len(ids) > limit {
+		if limit := model.ScrapeLimits[category]; limit > 0 && len(ids) > limit {
 			ids = ids[:limit]
 		} else if limit == 0{
 			ids = ids[:0] 
 		}
 
 		if err != nil {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] FATAL: %v",
 				category,
 				err,
@@ -271,37 +224,37 @@ func main() {
 		}
 
 		if len(ids) == 0 {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] no records found",
 				category,
 				)
 			continue
 		}
 
-		c := newScraper(client, category)
-		c2 := newScraper(client, category)
+		c := spse.NewScraper(client, category)
+		c2 := spse.NewScraper(client, category)
 
-		var results []Paket
+		var results []model.Paket
 		var pemenangBerkontrak map[string]string
-		var realisasi map[string][]Realisasi
+		var realisasi map[string][]model.Realisasi
 
 		switch category {
 		case "tender":
-			results = scrapeTenderDetails(client, c, ids)
-			pemenangBerkontrak = scrapeTenderPemenangBerkontrak(client, c2, ids)
+			results = spse.ScrapeTenderDetails(client, c, ids)
+			pemenangBerkontrak = spse.ScrapeTenderPemenangBerkontrak(client, c2, ids)
 		case "nontender":
-			results = scrapeNonTenderDetails(client, c, ids)
-			pemenangBerkontrak = scrapeNonTenderPemenangBerkontrak(client, c2, ids)
+			results = spse.ScrapeNonTenderDetails(client, c, ids)
+			pemenangBerkontrak = spse.ScrapeNonTenderPemenangBerkontrak(client, c2, ids)
 		case "pencatatan":
-			results = scrapePencatatanDetails(client, c, ids)
-			realisasi = scrapePencatatanRealisasi(client, c2, ids)
+			results = spse.ScrapePencatatanDetails(client, c, ids)
+			realisasi = spse.ScrapePencatatanRealisasi(client, c2, ids)
 		case "swakelola":
-			results = scrapeSwakelolaDetails(client, c, ids)
-			realisasi = scrapeSwakelolaRealisasi(client, c2, ids)
+			results = spse.ScrapeSwakelolaDetails(client, c, ids)
+			realisasi = spse.ScrapeSwakelolaRealisasi(client, c2, ids)
 		}
 
 		if len(results) == 0 {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] no package details scraped",
 				category,
 				)
@@ -331,11 +284,11 @@ func main() {
 			}
 		}
 
-		if err := exportToCSV(
+		if err := spse.ExportToCSV(
 			results,
 			category,
 			); err != nil {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] export failed: %v",
 				category,
 				err,
@@ -344,6 +297,6 @@ func main() {
 		}
 	}
 
-	printVerbose("")
-	printVerbose("All categories completed.")
+	util.PrintVerbose("")
+	util.PrintVerbose("All categories completed.")
 }

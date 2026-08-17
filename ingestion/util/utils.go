@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"fmt"
@@ -7,13 +7,15 @@ import (
 	"strconv"
 )
 
-func printVerbose(format string, a ...interface{}) {
+var verbose = true
+
+func PrintVerbose(format string, a ...interface{}) {
 	if verbose {
 		fmt.Printf(format+"\n", a...)
 	}
 }
 
-func splitNumbers(s string) ([]int64, error) {
+func SplitNumbers(s string) ([]int64, error) {
 	re := regexp.MustCompile(`(?:Rp\.?\s*)?([\d.]+)(?:,\d+)?`)
 	matches := re.FindAllStringSubmatch(s, -1)
 

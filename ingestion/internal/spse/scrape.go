@@ -1,4 +1,4 @@
-package main
+package spse
 
 import (
 	"net/http"
@@ -11,6 +11,9 @@ import (
 	"net/url"
 
 	"github.com/gocolly/colly/v2"
+	"ingestion/internal/spse/category"
+	"ingestion/internal/spse/model"
+	"ingestion/util"
 )
 
 func extractKode(path, prefix string) string {
@@ -24,20 +27,20 @@ func extractKode(path, prefix string) string {
     return strings.Split(remaining, "/")[0]
 }
 
-func newScraper(client *http.Client, category string) (*colly.Collector){
+func NewScraper(client *http.Client, category string) (*colly.Collector){
 	c := colly.NewCollector(
 		colly.AllowedDomains("spse.inaproc.id"),
-		colly.UserAgent(userAgent),
+		colly.UserAgent(model.UserAgent),
 		colly.Async(true),
 		)
 
-	baseURLParsed, err := url.Parse(baseURL)
+	baseURLParsed, err := url.Parse(model.BaseURL)
 
 	if err == nil && client.Jar != nil {
 		cookies := client.Jar.Cookies(baseURLParsed)
 
 		if len(cookies) > 0 {
-			_ = c.SetCookies(baseURL, cookies)
+			_ = c.SetCookies(model.BaseURL, cookies)
 		}
 	}
 
@@ -64,32 +67,15 @@ func newScraper(client *http.Client, category string) (*colly.Collector){
 
 		r.Headers.Set(
 			"Referer",
-			getPath(category, pemda, "", "portal"),
+			GetPath(category, model.Pemda, "", "portal"),
 			)
 	})
 
 	return c
 }
 
-type FieldRule struct {
-	Match  func(keyLower string) bool
-	Handle func(detail *Paket, val string)
-}
-
-type ScraperConfig struct {
-	Category    string
-	KodePrefix KodePrefix
-	InitDetail  func(reqURL string) Paket 
-	FieldRules  []FieldRule
-}
-
-type KodePrefix struct {
-	Detail  string 
-	Evaluasi string
-}
-
-func scrapeDetails(client *http.Client, c *colly.Collector, ids []string, cfg ScraperConfig) []Paket {
-	var results []Paket
+func ScrapeDetails(client *http.Client, c *colly.Collector, ids []string, cfg category.ScraperConfig) []model.Paket {
+	var results []model.Paket
 	var mu sync.Mutex
 	var scraped atomic.Int64
 	wsRegex := regexp.MustCompile(`\s+`)
@@ -123,44 +109,44 @@ func scrapeDetails(client *http.Client, c *colly.Collector, ids []string, cfg Sc
 		results = append(results, detail)
 		mu.Unlock()
 		current := scraped.Add(1)
-		printVerbose("[%s] <= 200 OK %s %d/%d", cfg.Category, detail.Kode, current, len(ids))
+		util.PrintVerbose("[%s] <= 200 OK %s %d/%d", cfg.Category, detail.Kode, current, len(ids))
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-		printVerbose("[%s] <= %d ERROR %v", cfg.Category, r.StatusCode, err)
+		util.PrintVerbose("[%s] <= %d ERROR %v", cfg.Category, r.StatusCode, err)
 	})
 
 	for _, id := range ids {
-		targetURL := getPath(cfg.Category, pemda, id, "pengumuman")
+		targetURL := GetPath(cfg.Category, model.Pemda, id, "pengumuman")
 		if targetURL == "" {
-			printVerbose("[%s] skipping ID %s: no %s path", cfg.Category, id, "pengumuman")
+			util.PrintVerbose("[%s] skipping ID %s: no %s path", cfg.Category, id, "pengumuman")
 			continue
 		}
 		if err := c.Visit(targetURL); err != nil {
-			printVerbose("[%s] failed to visit %s: %v", cfg.Category, targetURL, err)
+			util.PrintVerbose("[%s] failed to visit %s: %v", cfg.Category, targetURL, err)
 		}
 	}
 	c.Wait()
 	return results
 }
 
-func scrapeTenderDetails(client *http.Client, c *colly.Collector, ids []string) []Paket {
-	return scrapeDetails(client, c, ids, tenderConfig())
+func ScrapeTenderDetails(client *http.Client, c *colly.Collector, ids []string) []model.Paket {
+	return ScrapeDetails(client, c, ids, category.TenderConfig())
 }
 
-func scrapeNonTenderDetails(client *http.Client, c *colly.Collector, ids []string) []Paket {
-	return scrapeDetails(client, c, ids, nonTenderConfig()) // same shape, different rules/prefix
+func ScrapeNonTenderDetails(client *http.Client, c *colly.Collector, ids []string) []model.Paket {
+	return ScrapeDetails(client, c, ids, category.NonTenderConfig()) // same shape, different rules/prefix
 }
 
-func scrapePencatatanDetails(client *http.Client, c *colly.Collector, ids []string) []Paket {
-	return scrapeDetails(client, c, ids, pencatatanConfig()) // same shape, different rules/prefix
+func ScrapePencatatanDetails(client *http.Client, c *colly.Collector, ids []string) []model.Paket {
+	return ScrapeDetails(client, c, ids, category.PencatatanConfig()) // same shape, different rules/prefix
 }
 
-func scrapeSwakelolaDetails(client *http.Client, c *colly.Collector, ids []string) []Paket {
-	return scrapeDetails(client, c, ids, swakelolaConfig()) // same shape, different rules/prefix
+func ScrapeSwakelolaDetails(client *http.Client, c *colly.Collector, ids []string) []model.Paket {
+	return ScrapeDetails(client, c, ids, category.SwakelolaConfig()) // same shape, different rules/prefix
 }
 
-func scrapePemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string, cfg ScraperConfig) map[string]string {
+func ScrapePemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string, cfg category.ScraperConfig) map[string]string {
 	pemenang := make(map[string]string)
 	var mu sync.Mutex
 
@@ -191,15 +177,15 @@ func scrapePemenangBerkontrak(client *http.Client, c *colly.Collector, ids []str
 	})
 
 	for _, id := range ids {
-		targetURL := getPath(
+		targetURL := GetPath(
 			cfg.Category,
-			pemda,
+			model.Pemda,
 			id,
 			"pemenang_berkontrak",
 		)
 
 		if targetURL == "" {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] skipping ID %s: no pemenang berkontrak path",
 				cfg.Category,
 				id,
@@ -208,7 +194,7 @@ func scrapePemenangBerkontrak(client *http.Client, c *colly.Collector, ids []str
 		}
 
 		if err := c.Visit(targetURL); err != nil {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] failed to visit %s: %v",
 				cfg.Category,
 				targetURL,
@@ -223,16 +209,16 @@ func scrapePemenangBerkontrak(client *http.Client, c *colly.Collector, ids []str
 
 }
 
-func scrapeTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
-	return scrapePemenangBerkontrak(client, c, ids, tenderConfig())
+func ScrapeTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
+	return ScrapePemenangBerkontrak(client, c, ids, category.TenderConfig())
 }
 
-func scrapeNonTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
-	return scrapePemenangBerkontrak(client, c, ids, nonTenderConfig())
+func ScrapeNonTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
+	return ScrapePemenangBerkontrak(client, c, ids, category.NonTenderConfig())
 }
 
-func scrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg ScraperConfig) map[string][]Realisasi {
-	realisasiData := make(map[string][]Realisasi)
+func ScrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg category.ScraperConfig) map[string][]model.Realisasi {
+	realisasiData := make(map[string][]model.Realisasi)
 	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
@@ -245,11 +231,11 @@ func scrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg 
 			kode = e.Request.URL.Query().Get("id")
 		}
 
-		var realisasi []Realisasi
+		var realisasi []model.Realisasi
 
 		if e.DOM.Find(selector).Length() == 0  {
 			mu.Lock()
-			realisasiData[kode] = []Realisasi{}
+			realisasiData[kode] = []model.Realisasi{}
 			mu.Unlock()
 			return
 		}
@@ -281,7 +267,7 @@ func scrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg 
 				parsedTanggal.Location(),
 				)
 
-			r := Realisasi{
+			r := model.Realisasi{
 				Jenis: jenis,
 				Nilai: nilai,
 				Tanggal: dateOnly,
@@ -300,15 +286,15 @@ func scrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg 
 	})
 
 	for _, id := range ids {
-		targetURL := getPath(
+		targetURL := GetPath(
 			cfg.Category,
-			pemda,
+			model.Pemda,
 			id,
 			"pemenang_berkontrak",
 		)
 
 		if targetURL == "" {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] skipping ID %s: no pemenang path",
 				cfg.Category,
 				id,
@@ -317,7 +303,7 @@ func scrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg 
 		}
 
 		if err := c.Visit(targetURL); err != nil {
-			printVerbose(
+			util.PrintVerbose(
 				"[%s] failed to visit %s: %v",
 				cfg.Category,
 				targetURL,
@@ -331,10 +317,10 @@ func scrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg 
 	return realisasiData
 }
 
-func scrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]Realisasi{
-	return scrapeRealisasi(client, c, ids, pencatatanConfig())
+func ScrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]model.Realisasi{
+	return ScrapeRealisasi(client, c, ids, category.PencatatanConfig())
 }
 
-func scrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]Realisasi{
-	return scrapeRealisasi(client, c, ids, swakelolaConfig())
+func ScrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]model.Realisasi{
+	return ScrapeRealisasi(client, c, ids, category.SwakelolaConfig())
 }

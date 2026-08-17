@@ -1,4 +1,4 @@
-package main
+package spse
 
 import (
 	"encoding/csv"
@@ -8,11 +8,13 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"ingestion/internal/spse/model"
+	"ingestion/util"
 )
 
-
-func exportToCSV(
-	data []Paket,
+func ExportToCSV(
+	data []model.Paket,
 	category string,
 ) error {
 	if len(data) == 0 {
@@ -28,7 +30,7 @@ func exportToCSV(
 
 	filename := fmt.Sprintf(
 		"spse_%s_%s_%s.csv",
-		pemda,
+		model.Pemda,
 		category,
 		timestamp,
 		)
@@ -248,7 +250,7 @@ func exportToCSV(
 		}
 	}
 
-	printVerbose(
+	util.PrintVerbose(
 		"[%s] Exported %d records to %s",
 		category,
 		len(data),

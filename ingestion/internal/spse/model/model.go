@@ -1,26 +1,24 @@
-package main
+package model
 
 import (
 	"time"
 )
 
-var verbose = true
-
 const (
-	baseURL   = "https://spse.inaproc.id"
-	pemda     = "wonogirikab"
-	year      = "2025"
-	userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	BaseURL   = "https://spse.inaproc.id"
+	Pemda     = "wonogirikab"
+	Year      = "2025"
+	UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
 
-var scrapeLimits = map[string]int{
+var ScrapeLimits = map[string]int{
 	"tender":     -1,
 	"nontender":  0,
 	"pencatatan": 0,
 	"swakelola":  10,
 }
 
-type CategoryPaths struct {
+type CategoryPath struct {
 	Portal     string
 	Pengumuman string
 	Peserta    string
@@ -29,7 +27,7 @@ type CategoryPaths struct {
 	Dt         string
 }
 
-var categoryPaths = map[string]CategoryPaths{
+var CategoryPaths = map[string]CategoryPath{
 	"tender": {
 		Portal:     "/lelang",
 		Pengumuman: "/lelang/%s/pengumumanlelang",
