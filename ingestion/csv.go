@@ -96,7 +96,7 @@ func exportToCSV(
 			"Metode Pengadaan",
 			"Tahun Anggaran",
 			"Nilai Pagu Paket (dalam Rupiah)",
-			"Pemenang Berkontrak",
+			"Realisasi",
 			"URL",
 		}
 	case "swakelola":
@@ -109,7 +109,7 @@ func exportToCSV(
 			// "Tipe Pelaksanaan Swakelola",
 			"Tahun Anggaran",
 			"Nilai Pagu Paket (dalam Rupiah)",
-			"Pelaksana",
+			"Realisasi",
 			"URL",
 		}
 	}
