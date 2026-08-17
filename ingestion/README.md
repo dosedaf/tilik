@@ -4,3 +4,5 @@ objectives:
 
 known issue: 
 cant parse "" empty tanggal in pencatatan. (swakelola bisa juga)
+
+refactor sisa client.go
