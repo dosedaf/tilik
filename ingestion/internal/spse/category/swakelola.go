@@ -12,7 +12,7 @@ func SwakelolaConfig() ScraperConfig {
 		Category:    "swakelola",
 		KodePrefix:  KodePrefix{
 			Detail: "/swakelola/",
-			Evaluasi: "pengumumanswakelolapelaksana",
+			Evaluasi: "/pengumumanswakelolapelaksana/",
 		},
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "swakelola", URL: url, Swakelola: &model.SwakelolaDetail{}}

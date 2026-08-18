@@ -13,7 +13,7 @@ import (
 	"ingestion/util"
 )
 
-func ExportToCSV(
+func (s *SPSEScraper) ExportToCSV(
 	data []model.Paket,
 	category string,
 ) error {

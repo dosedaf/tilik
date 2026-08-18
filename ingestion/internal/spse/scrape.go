@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"sync"
 	"net/url"
+	"encoding/json"
 
 	"github.com/gocolly/colly/v2"
 	"ingestion/internal/spse/category"
@@ -27,54 +28,222 @@ func extractKode(path, prefix string) string {
     return strings.Split(remaining, "/")[0]
 }
 
-func NewScraper(client *http.Client, category string) (*colly.Collector){
-	c := colly.NewCollector(
-		colly.AllowedDomains("spse.inaproc.id"),
-		colly.UserAgent(model.UserAgent),
-		colly.Async(true),
-		)
+type ScrapeContext struct {
+	Pemda string
+	Year string
+}
 
-	baseURLParsed, err := url.Parse(model.BaseURL)
+func (s *SPSEScraper) Scrape(pemdas []string) error {
+	for _, pemda := range pemdas {
+		ctx := ScrapeContext{
+			Pemda: pemda,
+			Year: model.Year,
+		}
 
-	if err == nil && client.Jar != nil {
-		cookies := client.Jar.Cookies(baseURLParsed)
-
-		if len(cookies) > 0 {
-			_ = c.SetCookies(model.BaseURL, cookies)
+		for _, cfg := range category.AllConfigs() {
+			if err := s.scrapeCategory(ctx, cfg); err != nil {
+				util.PrintVerbose(
+					"[%s/%s] failed: %v",
+					ctx.Pemda,
+					cfg.Category,
+					err,
+					)
+				return err
+			}
 		}
 	}
 
-	err = c.Limit(&colly.LimitRule{
-		DomainGlob:  "*spse.inaproc.id*",
-		Parallelism: 8,
-		Delay:       time.Second / 2,
-	})
-
-	if err != nil {
-		fmt.Println("error")
-	}
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set(
-			"Accept",
-			"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-			)
-
-		r.Headers.Set(
-			"Accept-Language",
-			"en-US,en;q=0.9,id;q=0.8",
-			)
-
-		r.Headers.Set(
-			"Referer",
-			GetPath(category, model.Pemda, "", "portal"),
-			)
-	})
-
-	return c
+	return nil
 }
 
-func ScrapeDetails(client *http.Client, c *colly.Collector, ids []string, cfg category.ScraperConfig) []model.Paket {
+func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConfig) error {
+		util.PrintVerbose("CATEGORY: %s", cfg.Category)
+
+		token, err := s.GetToken(
+			ctx.Pemda,
+			cfg,
+		)
+
+		if err != nil {
+			util.PrintVerbose("[%s] FATAL: %v", cfg.Category, err)
+			return err
+		}
+
+		ids, err := s.FetchIDs(
+			token,
+			ctx.Pemda,
+			cfg,
+			)
+
+		if err != nil {
+			util.PrintVerbose("[%s] FATAL: %v", cfg.Category, err)
+			return err
+		}
+
+		if limit := model.ScrapeLimits[cfg.Category]; limit > 0 && len(ids) > limit {
+			ids = ids[:limit]
+		} else if limit == 0{
+			ids = ids[:0] 
+		}
+
+		if len(ids) == 0 {
+			util.PrintVerbose("[%s] no records found", cfg.Category)
+			return nil
+		}
+
+		c := s.NewCollector(cfg.Category, ctx.Pemda)
+		c2 := s.NewCollector(cfg.Category, ctx.Pemda)
+
+		var results []model.Paket
+		var pemenangBerkontrak map[string]string
+		var realisasi map[string][]model.Realisasi
+
+		switch cfg.Category {
+		case "tender":
+			results = s.ScrapeDetails(ctx, c, ids, cfg)
+			pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
+		case "nontender":
+			results = s.ScrapeDetails(ctx, c, ids, cfg)
+			pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
+		case "pencatatan":
+			results = s.ScrapeDetails(ctx, c, ids, cfg)
+			realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
+		case "swakelola":
+			results = s.ScrapeDetails(ctx, c, ids, cfg)
+			realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
+		}
+
+		if len(results) == 0 {
+			util.PrintVerbose("[%s] no package details scraped", cfg.Category)
+		}
+
+		switch cfg.Category {
+		case "tender":
+			for i := range results {
+				if results[i].Tender.PemenangBerkontrak == "Tender Batal" {
+					continue
+				}
+
+				results[i].Tender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
+			}
+		case "nontender":
+			for i := range results {
+				results[i].NonTender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
+			}
+		case "pencatatan":
+			for i := range results {
+				results[i].Pencatatan.Realisasi =  realisasi[results[i].Kode]
+			}
+		case "swakelola":
+			for i := range results {
+				results[i].Swakelola.Realisasi = realisasi[results[i].Kode]
+			}
+		}
+
+		if err := s.ExportToCSV(
+			results,
+			cfg.Category,
+			); err != nil {
+			util.PrintVerbose("[%s] export failed: %v", cfg.Category, err)
+		}
+
+	return nil
+}
+
+func (s *SPSEScraper) FetchIDs(
+	token string,
+	pemda string,
+	cfg category.ScraperConfig,
+) ([]string, error) {
+	apiURL := GetPath(cfg.Category, pemda, "", "dt")
+
+	if apiURL == "" {
+		return nil, fmt.Errorf("invalid DT path for category %s", cfg.Category)
+	}
+
+	apiURL += "?tahun=" + url.QueryEscape(model.Year)
+
+	util.PrintVerbose("[%s] POST %s", cfg.Category, apiURL)
+
+	formData := url.Values{}
+
+	formData.Set("draw", "1")
+	formData.Set("start", "0")
+	formData.Set("length", "-1")
+	formData.Set("authenticityToken", token)
+
+	req, err := http.NewRequest(
+		"POST",
+		apiURL,
+		strings.NewReader(formData.Encode()),
+		)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set(
+		"Content-Type",
+		"application/x-www-form-urlencoded; charset=UTF-8",
+		)
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+	req.Header.Set("User-Agent", model.UserAgent)
+
+	resp, err := s.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"DT request failed: HTTP %d %s",
+			resp.StatusCode,
+			http.StatusText(resp.StatusCode),
+			)
+	}
+
+	util.PrintVerbose(
+		"[%s] HTTP/1.1 %d %s",
+		cfg.Category,
+		resp.StatusCode,
+		http.StatusText(resp.StatusCode),
+		)
+
+	var dtResp model.DTResponse
+
+	if err := json.NewDecoder(resp.Body).Decode(&dtResp); err != nil {
+		return nil, err
+	}
+
+	var ids []string
+
+	for _, row := range dtResp.Data {
+		// printVerbose("[%s] ROW: %#v", category, row)
+		if len(row) == 0 {
+			continue
+		}
+
+		switch val := row[0].(type) {
+		case string:
+			if val != "" {
+				ids = append(ids, val)
+			}
+
+		case float64:
+			ids = append(ids, fmt.Sprintf("%.0f", val))
+		}
+	}
+
+	util.PrintVerbose(
+		"[%s] payload extracted: %d records found",
+		cfg.Category,
+		len(ids),
+		)
+
+	return ids, nil
+}
+
+func (s *SPSEScraper) ScrapeDetails(ctx ScrapeContext, c *colly.Collector, ids []string, cfg category.ScraperConfig) []model.Paket {
 	var results []model.Paket
 	var mu sync.Mutex
 	var scraped atomic.Int64
@@ -117,7 +286,7 @@ func ScrapeDetails(client *http.Client, c *colly.Collector, ids []string, cfg ca
 	})
 
 	for _, id := range ids {
-		targetURL := GetPath(cfg.Category, model.Pemda, id, "pengumuman")
+		targetURL := GetPath(cfg.Category, ctx.Pemda, id, "pengumuman")
 		if targetURL == "" {
 			util.PrintVerbose("[%s] skipping ID %s: no %s path", cfg.Category, id, "pengumuman")
 			continue
@@ -130,23 +299,7 @@ func ScrapeDetails(client *http.Client, c *colly.Collector, ids []string, cfg ca
 	return results
 }
 
-func ScrapeTenderDetails(client *http.Client, c *colly.Collector, ids []string) []model.Paket {
-	return ScrapeDetails(client, c, ids, category.TenderConfig())
-}
-
-func ScrapeNonTenderDetails(client *http.Client, c *colly.Collector, ids []string) []model.Paket {
-	return ScrapeDetails(client, c, ids, category.NonTenderConfig()) // same shape, different rules/prefix
-}
-
-func ScrapePencatatanDetails(client *http.Client, c *colly.Collector, ids []string) []model.Paket {
-	return ScrapeDetails(client, c, ids, category.PencatatanConfig()) // same shape, different rules/prefix
-}
-
-func ScrapeSwakelolaDetails(client *http.Client, c *colly.Collector, ids []string) []model.Paket {
-	return ScrapeDetails(client, c, ids, category.SwakelolaConfig()) // same shape, different rules/prefix
-}
-
-func ScrapePemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string, cfg category.ScraperConfig) map[string]string {
+func (s *SPSEScraper)  ScrapePemenangBerkontrak(ctx ScrapeContext, c *colly.Collector, ids []string, cfg category.ScraperConfig) map[string]string {
 	pemenang := make(map[string]string)
 	var mu sync.Mutex
 
@@ -179,7 +332,7 @@ func ScrapePemenangBerkontrak(client *http.Client, c *colly.Collector, ids []str
 	for _, id := range ids {
 		targetURL := GetPath(
 			cfg.Category,
-			model.Pemda,
+			ctx.Pemda,
 			id,
 			"pemenang_berkontrak",
 		)
@@ -209,15 +362,8 @@ func ScrapePemenangBerkontrak(client *http.Client, c *colly.Collector, ids []str
 
 }
 
-func ScrapeTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
-	return ScrapePemenangBerkontrak(client, c, ids, category.TenderConfig())
-}
 
-func ScrapeNonTenderPemenangBerkontrak(client *http.Client, c *colly.Collector, ids []string) map[string]string {
-	return ScrapePemenangBerkontrak(client, c, ids, category.NonTenderConfig())
-}
-
-func ScrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg category.ScraperConfig) map[string][]model.Realisasi {
+func (s *SPSEScraper) ScrapeRealisasi(ctx ScrapeContext, c *colly.Collector, ids []string, cfg category.ScraperConfig) map[string][]model.Realisasi {
 	realisasiData := make(map[string][]model.Realisasi)
 	var mu sync.Mutex
 
@@ -288,7 +434,7 @@ func ScrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg 
 	for _, id := range ids {
 		targetURL := GetPath(
 			cfg.Category,
-			model.Pemda,
+			ctx.Pemda,
 			id,
 			"pemenang_berkontrak",
 		)
@@ -315,12 +461,4 @@ func ScrapeRealisasi(client *http.Client, c *colly.Collector, ids []string, cfg 
 	c.Wait()
 
 	return realisasiData
-}
-
-func ScrapePencatatanRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]model.Realisasi{
-	return ScrapeRealisasi(client, c, ids, category.PencatatanConfig())
-}
-
-func ScrapeSwakelolaRealisasi(client *http.Client, c *colly.Collector, ids []string) map[string][]model.Realisasi{
-	return ScrapeRealisasi(client, c, ids, category.SwakelolaConfig())
 }

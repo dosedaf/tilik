@@ -21,3 +21,11 @@ type KodePrefix struct {
 	Evaluasi string
 }
 
+func AllConfigs() []ScraperConfig {
+	return []ScraperConfig{
+		TenderConfig(),
+		NonTenderConfig(),
+		PencatatanConfig(),
+		SwakelolaConfig(),
+	}
+}

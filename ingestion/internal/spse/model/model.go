@@ -12,9 +12,9 @@ const (
 )
 
 var ScrapeLimits = map[string]int{
-	"tender":     -1,
-	"nontender":  0,
-	"pencatatan": 0,
+	"tender":     10,
+	"nontender":  10,
+	"pencatatan": 10,
 	"swakelola":  10,
 }
 
