@@ -2,17 +2,21 @@ package category
 
 import (
 	"strings"
+	"net/url"
+
 	"ingestion/internal/spse/model"
 	"ingestion/util"
 )
 
 func NonTenderConfig() ScraperConfig {
-	return ScraperConfig{
-		Category:    "nontender",
-		KodePrefix:  KodePrefix{
+	kodePrefix := KodePrefix{
 			Detail: "/nontender/",
 			Evaluasi: "/evaluasinontender/",
-		},
+	}
+
+	return ScraperConfig{
+		Category:    "nontender",
+		KodePrefix:  kodePrefix,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "nontender", URL: url, NonTender: &model.NonTenderDetail{}}
 		},
@@ -70,6 +74,12 @@ func NonTenderConfig() ScraperConfig {
 				Match:  func(k string) bool { return strings.Contains(k, "lokasi") },
 				Handle: func(d *model.Paket, v string) { d.NonTender.Lokasi = v },
 			},
+		},
+		ExtractDetailKode: func(u *url.URL) string {
+			return(extractKode(u, kodePrefix.Detail))
+		},
+		ExtractEvaluasiKode: func(u *url.URL) string {
+			return(extractKode(u, kodePrefix.Evaluasi))
 		},
 	}
 }

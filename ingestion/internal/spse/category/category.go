@@ -1,6 +1,7 @@
 package category
 
 import (
+	"net/url"
 	"ingestion/internal/spse/model"
 )
 
@@ -14,6 +15,9 @@ type ScraperConfig struct {
 	KodePrefix KodePrefix
 	InitDetail  func(reqURL string) model.Paket 
 	FieldRules  []FieldRule
+
+	ExtractDetailKode func(*url.URL) string
+	ExtractEvaluasiKode func(*url.URL) string
 }
 
 type KodePrefix struct {

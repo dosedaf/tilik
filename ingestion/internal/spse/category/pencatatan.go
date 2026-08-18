@@ -2,17 +2,19 @@ package category
 
 import (
 	"strings"
+	"net/url"
 
 	"ingestion/internal/spse/model"
 	"ingestion/util"
 )
 
 func PencatatanConfig() ScraperConfig {
+	kodePrefix := KodePrefix{
+			Detail: "/pencatatan/",
+	}
 	return ScraperConfig{
 		Category:    "pencatatan",
-		KodePrefix:  KodePrefix{
-			Detail: "/pencatatan/",
-		},
+		KodePrefix:  kodePrefix,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "pencatatan", URL: url, Pencatatan: &model.PencatatanDetail{}}
 		},
@@ -63,6 +65,12 @@ func PencatatanConfig() ScraperConfig {
 					}
 				},
 			},
+		},
+		ExtractDetailKode: func(u *url.URL) string {
+			return(extractKode(u, kodePrefix.Detail))
+		},
+		ExtractEvaluasiKode: func(u *url.URL) string {
+			return u.Query().Get("id")
 		},
 	}
 }

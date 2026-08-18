@@ -24,6 +24,7 @@ type CategoryPath struct {
 	Peserta    string
 	Pemenang   string
 	PemenangBerkontrak string
+	Realisasi string
 	Dt         string
 }
 

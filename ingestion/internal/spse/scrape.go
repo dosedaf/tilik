@@ -17,17 +17,6 @@ import (
 	"ingestion/util"
 )
 
-func extractKode(path, prefix string) string {
-    idx := strings.Index(path, prefix)
-    if idx == -1 {
-        return ""
-    }
-
-    remaining := path[idx+len(prefix):]
-
-    return strings.Split(remaining, "/")[0]
-}
-
 type ScrapeContext struct {
 	Pemda string
 	Year string
@@ -57,95 +46,95 @@ func (s *SPSEScraper) Scrape(pemdas []string) error {
 }
 
 func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConfig) error {
-		util.PrintVerbose("CATEGORY: %s", cfg.Category)
+	util.PrintVerbose("CATEGORY: %s", cfg.Category)
 
-		token, err := s.GetToken(
-			ctx.Pemda,
-			cfg,
+	token, err := s.GetToken(
+		ctx.Pemda,
+		cfg,
 		)
 
-		if err != nil {
-			util.PrintVerbose("[%s] FATAL: %v", cfg.Category, err)
-			return err
-		}
+	if err != nil {
+		util.PrintVerbose("[%s] FATAL: %v", cfg.Category, err)
+		return err
+	}
 
-		ids, err := s.FetchIDs(
-			token,
-			ctx.Pemda,
-			cfg,
-			)
+	ids, err := s.FetchIDs(
+		token,
+		ctx.Pemda,
+		cfg,
+		)
 
-		if err != nil {
-			util.PrintVerbose("[%s] FATAL: %v", cfg.Category, err)
-			return err
-		}
+	if err != nil {
+		util.PrintVerbose("[%s] FATAL: %v", cfg.Category, err)
+		return err
+	}
 
-		if limit := model.ScrapeLimits[cfg.Category]; limit > 0 && len(ids) > limit {
-			ids = ids[:limit]
-		} else if limit == 0{
-			ids = ids[:0] 
-		}
+	if limit := model.ScrapeLimits[cfg.Category]; limit > 0 && len(ids) > limit {
+		ids = ids[:limit]
+	} else if limit == 0{
+		ids = ids[:0] 
+	}
 
-		if len(ids) == 0 {
-			util.PrintVerbose("[%s] no records found", cfg.Category)
-			return nil
-		}
+	if len(ids) == 0 {
+		util.PrintVerbose("[%s] no records found", cfg.Category)
+		return nil
+	}
 
-		c := s.NewCollector(cfg.Category, ctx.Pemda)
-		c2 := s.NewCollector(cfg.Category, ctx.Pemda)
+	c := s.NewCollector(cfg.Category, ctx.Pemda)
+	c2 := s.NewCollector(cfg.Category, ctx.Pemda)
 
-		var results []model.Paket
-		var pemenangBerkontrak map[string]string
-		var realisasi map[string][]model.Realisasi
+	var results []model.Paket
+	var pemenangBerkontrak map[string]string
+	var realisasi map[string][]model.Realisasi
 
-		switch cfg.Category {
-		case "tender":
-			results = s.ScrapeDetails(ctx, c, ids, cfg)
-			pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
-		case "nontender":
-			results = s.ScrapeDetails(ctx, c, ids, cfg)
-			pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
-		case "pencatatan":
-			results = s.ScrapeDetails(ctx, c, ids, cfg)
-			realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
-		case "swakelola":
-			results = s.ScrapeDetails(ctx, c, ids, cfg)
-			realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
-		}
+	switch cfg.Category {
+	case "tender":
+		results = s.ScrapeDetails(ctx, c, ids, cfg)
+		pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
+	case "nontender":
+		results = s.ScrapeDetails(ctx, c, ids, cfg)
+		pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
+	case "pencatatan":
+		results = s.ScrapeDetails(ctx, c, ids, cfg)
+		realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
+	case "swakelola":
+		results = s.ScrapeDetails(ctx, c, ids, cfg)
+		realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
+	}
 
-		if len(results) == 0 {
-			util.PrintVerbose("[%s] no package details scraped", cfg.Category)
-		}
+	if len(results) == 0 {
+		util.PrintVerbose("[%s] no package details scraped", cfg.Category)
+	}
 
-		switch cfg.Category {
-		case "tender":
-			for i := range results {
-				if results[i].Tender.PemenangBerkontrak == "Tender Batal" {
-					continue
-				}
-
-				results[i].Tender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
+	switch cfg.Category {
+	case "tender":
+		for i := range results {
+			if results[i].Tender.PemenangBerkontrak == "Tender Batal" {
+				continue
 			}
-		case "nontender":
-			for i := range results {
-				results[i].NonTender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
-			}
-		case "pencatatan":
-			for i := range results {
-				results[i].Pencatatan.Realisasi =  realisasi[results[i].Kode]
-			}
-		case "swakelola":
-			for i := range results {
-				results[i].Swakelola.Realisasi = realisasi[results[i].Kode]
-			}
-		}
 
-		if err := s.ExportToCSV(
-			results,
-			cfg.Category,
-			); err != nil {
-			util.PrintVerbose("[%s] export failed: %v", cfg.Category, err)
+			results[i].Tender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
 		}
+	case "nontender":
+		for i := range results {
+			results[i].NonTender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
+		}
+	case "pencatatan":
+		for i := range results {
+			results[i].Pencatatan.Realisasi =  realisasi[results[i].Kode]
+		}
+	case "swakelola":
+		for i := range results {
+			results[i].Swakelola.Realisasi = realisasi[results[i].Kode]
+		}
+	}
+
+	if err := s.ExportToCSV(
+		results,
+		cfg.Category,
+		); err != nil {
+		util.PrintVerbose("[%s] export failed: %v", cfg.Category, err)
+	}
 
 	return nil
 }
@@ -251,8 +240,9 @@ func (s *SPSEScraper) ScrapeDetails(ctx ScrapeContext, c *colly.Collector, ids [
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		detail := cfg.InitDetail(e.Request.URL.String())
+
 		if detail.Kode == "" {
-			detail.Kode = extractKode(e.Request.URL.Path, cfg.KodePrefix.Detail)
+			detail.Kode = cfg.ExtractDetailKode(e.Request.URL)
 		}
 
 		e.ForEach("table.table tr", func(_ int, row *colly.HTMLElement) {
@@ -304,12 +294,7 @@ func (s *SPSEScraper)  ScrapePemenangBerkontrak(ctx ScrapeContext, c *colly.Coll
 	var mu sync.Mutex
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
-		urlPath := e.Request.URL.Path
-		kode := extractKode(urlPath, cfg.KodePrefix.Evaluasi)
-
-		if cfg.Category == "pencatatan" {
-			kode = e.Request.URL.Query().Get("id")
-		}
+		kode := cfg.ExtractEvaluasiKode(e.Request.URL)
 
 		detailTag := e.DOM.Find("table.table tr:last-child tr td:first-child")
 
@@ -335,14 +320,14 @@ func (s *SPSEScraper)  ScrapePemenangBerkontrak(ctx ScrapeContext, c *colly.Coll
 			ctx.Pemda,
 			id,
 			"pemenang_berkontrak",
-		)
+			)
 
 		if targetURL == "" {
 			util.PrintVerbose(
 				"[%s] skipping ID %s: no pemenang berkontrak path",
 				cfg.Category,
 				id,
-			)
+				)
 			continue
 		}
 
@@ -352,7 +337,7 @@ func (s *SPSEScraper)  ScrapePemenangBerkontrak(ctx ScrapeContext, c *colly.Coll
 				cfg.Category,
 				targetURL,
 				err,
-			)
+				)
 		}
 	}
 
@@ -370,12 +355,7 @@ func (s *SPSEScraper) ScrapeRealisasi(ctx ScrapeContext, c *colly.Collector, ids
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		selector := ".bs-callout-info + table.table-sm tr:has(td[align=\"center\"])"
 
-		urlPath := e.Request.URL.Path
-		kode := extractKode(urlPath, cfg.KodePrefix.Evaluasi)
-
-		if cfg.Category == "pencatatan" {
-			kode = e.Request.URL.Query().Get("id")
-		}
+		kode := cfg.ExtractEvaluasiKode(e.Request.URL)
 
 		var realisasi []model.Realisasi
 
@@ -390,7 +370,7 @@ func (s *SPSEScraper) ScrapeRealisasi(ctx ScrapeContext, c *colly.Collector, ids
 			jenis := e.ChildText("td:nth-child(2)")
 			nilai := e.ChildText("td:nth-child(3)")
 			tanggal := e.ChildText("td:nth-child(4)")
-			
+
 			// DUMB QUICK FIX
 			// assign emptry string to tanggal if err is found
 			// FIX THIS LATER
@@ -437,14 +417,14 @@ func (s *SPSEScraper) ScrapeRealisasi(ctx ScrapeContext, c *colly.Collector, ids
 			ctx.Pemda,
 			id,
 			"pemenang_berkontrak",
-		)
+			)
 
 		if targetURL == "" {
 			util.PrintVerbose(
 				"[%s] skipping ID %s: no pemenang path",
 				cfg.Category,
 				id,
-			)
+				)
 			continue
 		}
 
@@ -454,7 +434,7 @@ func (s *SPSEScraper) ScrapeRealisasi(ctx ScrapeContext, c *colly.Collector, ids
 				cfg.Category,
 				targetURL,
 				err,
-			)
+				)
 		}
 	}
 

@@ -10,6 +10,7 @@ func main() {
 	pemdas := []string{
 		"wonogirikab",
 	}
+
 	s.Scrape(pemdas)
 
 }

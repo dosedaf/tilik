@@ -2,18 +2,21 @@ package category
 
 import (
 	"strings"
+	"net/url"
 
 	"ingestion/internal/spse/model"
 	"ingestion/util"
 )
 
 func SwakelolaConfig() ScraperConfig {
-	return ScraperConfig{
-		Category:    "swakelola",
-		KodePrefix:  KodePrefix{
+	kodePrefix := KodePrefix{
 			Detail: "/swakelola/",
 			Evaluasi: "/pengumumanswakelolapelaksana/",
-		},
+	}
+
+	return ScraperConfig{
+		Category:    "swakelola",
+		KodePrefix:  kodePrefix,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "swakelola", URL: url, Swakelola: &model.SwakelolaDetail{}}
 		},
@@ -60,6 +63,12 @@ func SwakelolaConfig() ScraperConfig {
 					}
 				},
 			},
+		},
+		ExtractDetailKode: func(u *url.URL) string {
+			return(extractKode(u, kodePrefix.Detail))
+		},
+		ExtractEvaluasiKode: func(u *url.URL) string {
+			return(extractKode(u, kodePrefix.Evaluasi))
 		},
 	}
 }

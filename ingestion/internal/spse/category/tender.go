@@ -2,18 +2,20 @@ package category
 
 import (
 	"strings"
+	"net/url"
 
 	"ingestion/internal/spse/model"
 	"ingestion/util"
 )
 
 func TenderConfig() ScraperConfig {
+	kodePrefix := KodePrefix{
+		Detail: "/lelang/",
+		Evaluasi: "/evaluasi/",
+	}
 	return ScraperConfig{
 		Category:    "tender",
-		KodePrefix:  KodePrefix{
-			Detail: "/lelang/",
-			Evaluasi: "/evaluasi/",
-		},
+		KodePrefix: kodePrefix,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "tender", URL: url, Tender: &model.TenderDetail{}}
 		},
@@ -76,6 +78,12 @@ func TenderConfig() ScraperConfig {
 				Match:  func(k string) bool { return strings.Contains(k, "lokasi") },
 				Handle: func(d *model.Paket, v string) { d.Tender.Lokasi = v },
 			},
+		},
+		ExtractDetailKode: func(u *url.URL) string {
+			return(extractKode(u, kodePrefix.Detail))
+		},
+		ExtractEvaluasiKode: func(u *url.URL) string {
+			return(extractKode(u, kodePrefix.Evaluasi))
 		},
 	}
 }
