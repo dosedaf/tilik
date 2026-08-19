@@ -11,6 +11,10 @@ func main() {
 		"wonogirikab",
 	}
 
-	s.Scrape(pemdas)
+	years := []string{
+		"2025",
+	}
+
+	s.Scrape(pemdas, years)
 
 }

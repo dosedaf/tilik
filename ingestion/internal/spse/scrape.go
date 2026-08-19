@@ -22,22 +22,19 @@ type ScrapeContext struct {
 	Year string
 }
 
-func (s *SPSEScraper) Scrape(pemdas []string) error {
+func (s *SPSEScraper) Scrape(pemdas []string, years []string) error {
 	for _, pemda := range pemdas {
-		ctx := ScrapeContext{
-			Pemda: pemda,
-			Year: model.Year,
-		}
+		for _, year := range years {
+			ctx := ScrapeContext{
+				Pemda: pemda,
+				Year: year,
+			}
 
-		for _, cfg := range category.AllConfigs() {
-			if err := s.scrapeCategory(ctx, cfg); err != nil {
-				util.PrintVerbose(
-					"[%s/%s] failed: %v",
-					ctx.Pemda,
-					cfg.Category,
-					err,
-					)
-				return err
+			for _, cfg := range category.AllConfigs() {
+				if err := s.scrapeCategory(ctx, cfg); err != nil {
+					util.PrintVerbose("[%s/%s] failed: %v",ctx.Pemda, cfg.Category, err)
+					return err
+				}
 			}
 		}
 	}
