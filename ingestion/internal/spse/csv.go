@@ -13,11 +13,8 @@ import (
 	"ingestion/util"
 )
 
-func (s *SPSEScraper) ExportToCSV(
-	ctx ScrapeContext,
-	data []model.Paket,
-	category string,
-) error {
+func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, category string) error {
+
 	if len(data) == 0 {
 		return fmt.Errorf(
 			"no data to export for category %s",
@@ -27,15 +24,13 @@ func (s *SPSEScraper) ExportToCSV(
 
 	timestamp := time.Now().Format("20060102_150405")
 
-	targetDir := "./spse"
+	targetDir := fmt.Sprintf("./data/spse/%s/%s", ctx.Pemda, ctx.Year)
 
 	filename := fmt.Sprintf(
-		"spse_%s_%s_%s__%s.csv",
-		ctx.Pemda,
+		"spse_%s_%s.csv",
 		category,
-		ctx.Year,
 		timestamp,
-		)
+	)
 
 	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
@@ -62,14 +57,20 @@ func (s *SPSEScraper) ExportToCSV(
 			"Kategori",
 			"Kode Tender",
 			"Nama Tender",
+			"Tanggal Pembuatan",
+			"Tahap Tender Saat Ini",
 			"K/L/PD/Instansi Lainnya",
 			"Satuan Kerja",
 			"Jenis Pengadaan",
 			"Metode Pengadaan",
+			"Reverse Auction",
 			"Tahun Anggaran",
 			"Nilai Pagu (dalam Rupiah)",
 			"Nilai HPS (dalam Rupiah)",
+			"Jenis Kontrak",
 			"Lokasi Pekerjaan",
+			"Kualifikasi Usaha",
+			"Jumlah Peserta",
 			"Pemenang Berkontrak",
 			"URL",
 		}
@@ -78,14 +79,19 @@ func (s *SPSEScraper) ExportToCSV(
 			"Kategori",
 			"Kode Paket",
 			"Nama Paket",
+			"Tanggal Pembuatan",
+			"Tahap Paket Saat Ini",
 			"K/L/PD/Instansi Lainnya",
 			"Satuan Kerja",
 			"Jenis Pengadaan",
 			"Metode Pengadaan",
+			"Khusus Orang Asli Papua (OAP)",
 			"Tahun Anggaran",
 			"Nilai Pagu (dalam Rupiah)",
 			"Nilai HPS (dalam Rupiah)",
+			"Jenis Kontrak",
 			"Lokasi Pekerjaan",
+			"Jumlah Peserta",
 			"Pemenang Berkontrak",
 			"URL",
 		}
@@ -94,6 +100,7 @@ func (s *SPSEScraper) ExportToCSV(
 			"Kategori",
 			"Kode Paket",
 			"Nama Paket",
+			"Tanggal Pembuatan",
 			"K/L/PD/Instansi Lainnya",
 			"Satuan Kerja",
 			"Jenis Pengadaan",
@@ -108,6 +115,7 @@ func (s *SPSEScraper) ExportToCSV(
 			"Kategori",
 			"Kode Swakelola",
 			"Nama Swakelola",
+			"Tanggal Pembuatan",
 			"K/L/PD",
 			"Satuan Kerja",
 			// "Tipe Pelaksanaan Swakelola",
@@ -131,14 +139,20 @@ func (s *SPSEScraper) ExportToCSV(
 				d.Kategori,
 				d.Kode,
 				d.Nama,
+				d.TanggalPembuatan,
+				d.Tender.Tahap,
 				d.Instansi,
 				d.Satker,
 				d.Tender.JenisPengadaan,
 				d.Tender.MetodePengadaan,
+				d.Tender.ReverseAuction,
 				d.Tahun,
 				strconv.FormatInt(d.Pagu, 10),
 				strconv.FormatInt(d.Tender.HPS, 10),
+				d.Tender.JenisKontrak,
 				d.Tender.Lokasi,
+				d.Tender.KualifikasiUsaha,
+				d.Tender.Peserta,
 				d.Tender.PemenangBerkontrak,
 				d.URL,
 			}
@@ -147,14 +161,19 @@ func (s *SPSEScraper) ExportToCSV(
 				d.Kategori,
 				d.Kode,
 				d.Nama,
+				d.TanggalPembuatan,
+				d.NonTender.Tahap,
 				d.Instansi,
 				d.Satker,
 				d.NonTender.JenisPengadaan,
 				d.NonTender.MetodePengadaan,
+				strconv.FormatBool(d.NonTender.OAP),
 				d.Tahun,
 				strconv.FormatInt(d.Pagu, 10),
 				strconv.FormatInt(d.NonTender.HPS, 10),
+				d.NonTender.JenisKontrak,
 				d.NonTender.Lokasi,
+				d.NonTender.Peserta,
 				d.NonTender.PemenangBerkontrak,
 				d.URL,
 			}
@@ -193,6 +212,7 @@ func (s *SPSEScraper) ExportToCSV(
 					d.Kategori,
 					d.Kode,
 					d.Nama,
+					d.TanggalPembuatan,
 					d.Instansi,
 					d.Satker,
 					d.Pencatatan.JenisPengadaan,
@@ -237,6 +257,7 @@ func (s *SPSEScraper) ExportToCSV(
 				d.Kategori,
 				d.Kode,
 				d.Nama,
+				d.TanggalPembuatan,
 				d.Instansi,
 				d.Satker,
 				d.Tahun,

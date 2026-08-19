@@ -1,9 +1,0 @@
-config tiap  kategori udh mayan aman, kode prefix beda2 coba handle gmn
-
-config cuma return untuk detail, pemenang  gimana? realisaasi gimana 
-
-ngapa pake global var pemda di set header?
-
-ada status 
-
-ada tahap

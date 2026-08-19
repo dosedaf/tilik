@@ -32,6 +32,10 @@ func SwakelolaConfig() ScraperConfig {
 				Handle: func(d *model.Paket, v string) { d.Nama = v },
 			},
 			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "tanggal pembuatan") },
+				Handle: func(d *model.Paket, v string) { d.TanggalPembuatan = v },
+			},
+			{
 				Match:  func(k string) bool { return strings.Contains(k, "k/l/pd") },
 				Handle: func(d *model.Paket, v string) { d.Instansi = v },
 			},

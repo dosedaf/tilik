@@ -69,16 +69,22 @@ type DTResponse struct {
 	Data            [][]interface{} `json:"data"`
 }
 
+type RUP struct {
+	Kode string
+	Nama string
+	SumberDana string
+}
 
 type Paket struct {
-	Kode	string
 	Kategori string
-	Tahun	string
-	TanggalPembuatan time.Time
+	Kode	string
 	Nama string
+	RUP []RUP
+	UraianSingkatPekerjaan string
+	TanggalPembuatan string
 	Instansi string
-	KodeRUP string
 	Satker string
+	Tahun	string
 	Pagu int64
 	SumberDana string
 	URL string
@@ -90,20 +96,29 @@ type Paket struct {
 }
 
 type TenderDetail struct {
+	Tahap string
 	JenisPengadaan	string
 	MetodePengadaan string
-	//JenisKontrak string
+	ReverseAuction string
+	JenisKontrak string
 	HPS int64
 	Lokasi string
+	KualifikasiUsaha string
+	SyaratKualifikasi string
+	Peserta string
 	PemenangBerkontrak string
 }
 
 type NonTenderDetail struct {
+	Tahap string
 	JenisPengadaan	string
 	MetodePengadaan string
+	OAP bool
 	JenisKontrak string
 	HPS int64
 	Lokasi string
+	SyaratKualifikasi string
+	Peserta string
 	PemenangBerkontrak string
 }
 

@@ -32,6 +32,14 @@ func NonTenderConfig() ScraperConfig {
 				Handle: func(d *model.Paket, v string) { d.Nama = v },
 			},
 			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "tanggal pembuatan") },
+				Handle: func(d *model.Paket, v string) { d.TanggalPembuatan = v },
+			},
+			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "tahap paket saat ini") },
+				Handle: func(d *model.Paket, v string) { d.NonTender.Tahap = v },
+			},
+			{
 				Match:  func(k string) bool { return strings.Contains(k, "k/l/pd") },
 				Handle: func(d *model.Paket, v string) { d.Instansi = v },
 			},
@@ -51,6 +59,17 @@ func NonTenderConfig() ScraperConfig {
 			{
 				Match:  func(k string) bool { return strings.EqualFold(k, "metode pengadaan") },
 				Handle: func(d *model.Paket, v string) { d.NonTender.MetodePengadaan = v },
+			},
+			{ // sementara OAP string dulu, nanti kalo fix Ya Tidak ganti ke bool dgn if block
+				Match:  func(k string) bool { return strings.Contains(k, "khusus orang asli papua") },
+				Handle: func(d *model.Paket, v string) { 
+					d.NonTender.OAP = true
+
+					if v == "Tidak" {
+						d.NonTender.OAP = false
+					}
+
+				},
 			},
 			{
 				Match:  func(k string) bool { return strings.Contains(k, "tahun anggaran") },
@@ -73,8 +92,16 @@ func NonTenderConfig() ScraperConfig {
 				},
 			},
 			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "jenis kontrak") },
+				Handle: func(d *model.Paket, v string) { d.NonTender.JenisKontrak = v },
+			},
+			{
 				Match:  func(k string) bool { return strings.Contains(k, "lokasi") },
 				Handle: func(d *model.Paket, v string) { d.NonTender.Lokasi = v },
+			},
+			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "peserta non tender") },
+				Handle: func(d *model.Paket, v string) { d.NonTender.Peserta = v },
 			},
 		},
 		ExtractDetailKode: func(u *url.URL) string {

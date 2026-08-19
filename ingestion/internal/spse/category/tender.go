@@ -32,8 +32,23 @@ func TenderConfig() ScraperConfig {
 					if strings.Contains(v, "Tender Batal") {
 						d.Tender.PemenangBerkontrak = "Tender Batal"
 					}
+					if strings.Contains(v, "Tender Gagal") {
+						d.Tender.PemenangBerkontrak = "Tender Gagal"
+					}
+					if strings.Contains(v, "Seleksi Batal") {
+						d.Tender.PemenangBerkontrak = "Seleksi Batal"
+					}
+
 					d.Nama = v
 				},
+			},
+			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "tanggal pembuatan") },
+				Handle: func(d *model.Paket, v string) { d.TanggalPembuatan = v },
+			},
+			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "tahap tender saat ini") },
+				Handle: func(d *model.Paket, v string) { d.Tender.Tahap = v },
 			},
 			{
 				Match:  func(k string) bool { return strings.Contains(k, "k/l/pd") },
@@ -57,7 +72,11 @@ func TenderConfig() ScraperConfig {
 				Handle: func(d *model.Paket, v string) { d.Tender.MetodePengadaan = v },
 			},
 			{
-				Match:  func(k string) bool { return strings.Contains(k, "tahun anggaran") },
+				Match:  func(k string) bool { return strings.Contains(k, "reverse auction") },
+				Handle: func(d *model.Paket, v string) { d.Tender.ReverseAuction = v },
+			},
+			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "tahun anggaran") },
 				Handle: func(d *model.Paket, v string) { d.Tahun = v },
 			},
 			{
@@ -77,8 +96,20 @@ func TenderConfig() ScraperConfig {
 				},
 			},
 			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "jenis kontrak") },
+				Handle: func(d *model.Paket, v string) { d.Tender.JenisKontrak = v },
+			},
+			{
 				Match:  func(k string) bool { return strings.Contains(k, "lokasi") },
 				Handle: func(d *model.Paket, v string) { d.Tender.Lokasi = v },
+			},
+			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "kualifikasi usaha") },
+				Handle: func(d *model.Paket, v string) { d.Tender.KualifikasiUsaha = v },
+			},
+			{
+				Match:  func(k string) bool { return strings.EqualFold(k, "peserta tender") },
+				Handle: func(d *model.Paket, v string) { d.Tender.Peserta = v },
 			},
 		},
 		ExtractDetailKode: func(u *url.URL) string {
@@ -89,7 +120,7 @@ func TenderConfig() ScraperConfig {
 		},
 		Enrich: func(results []model.Paket, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
 			for i := range results {
-				if results[i].Tender.PemenangBerkontrak == "Tender Batal" {
+				if results[i].Tender.PemenangBerkontrak != "" {
 					continue
 				}
 
