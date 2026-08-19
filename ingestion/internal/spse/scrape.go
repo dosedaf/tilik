@@ -56,8 +56,8 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 	}
 
 	ids, err := s.FetchIDs(
+		ctx,
 		token,
-		ctx.Pemda,
 		cfg,
 		)
 
@@ -84,18 +84,13 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 	var pemenangBerkontrak map[string]string
 	var realisasi map[string][]model.Realisasi
 
-	switch cfg.Category {
-	case "tender":
-		results = s.ScrapeDetails(ctx, c, ids, cfg)
+	results = s.ScrapeDetails(ctx, c, ids, cfg)
+
+	if cfg.HasPemenangBerkontrak {
 		pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
-	case "nontender":
-		results = s.ScrapeDetails(ctx, c, ids, cfg)
-		pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
-	case "pencatatan":
-		results = s.ScrapeDetails(ctx, c, ids, cfg)
-		realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
-	case "swakelola":
-		results = s.ScrapeDetails(ctx, c, ids, cfg)
+	}
+
+	if cfg.HasRealisasi {
 		realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
 	}
 
@@ -103,28 +98,7 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 		util.PrintVerbose("[%s] no package details scraped", cfg.Category)
 	}
 
-	switch cfg.Category {
-	case "tender":
-		for i := range results {
-			if results[i].Tender.PemenangBerkontrak == "Tender Batal" {
-				continue
-			}
-
-			results[i].Tender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
-		}
-	case "nontender":
-		for i := range results {
-			results[i].NonTender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
-		}
-	case "pencatatan":
-		for i := range results {
-			results[i].Pencatatan.Realisasi =  realisasi[results[i].Kode]
-		}
-	case "swakelola":
-		for i := range results {
-			results[i].Swakelola.Realisasi = realisasi[results[i].Kode]
-		}
-	}
+	cfg.Enrich(results, pemenangBerkontrak, realisasi)
 
 	if err := s.ExportToCSV(
 		results,
@@ -137,17 +111,17 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 }
 
 func (s *SPSEScraper) FetchIDs(
+	ctx ScrapeContext,
 	token string,
-	pemda string,
 	cfg category.ScraperConfig,
 ) ([]string, error) {
-	apiURL := GetPath(cfg.Category, pemda, "", "dt")
+	apiURL := GetPath(cfg.Category, ctx.Pemda, "", "dt")
 
 	if apiURL == "" {
 		return nil, fmt.Errorf("invalid DT path for category %s", cfg.Category)
 	}
 
-	apiURL += "?tahun=" + url.QueryEscape(model.Year)
+	apiURL += "?tahun=" + url.QueryEscape(ctx.Year)
 
 	util.PrintVerbose("[%s] POST %s", cfg.Category, apiURL)
 

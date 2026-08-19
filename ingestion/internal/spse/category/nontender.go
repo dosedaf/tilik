@@ -16,6 +16,8 @@ func NonTenderConfig() ScraperConfig {
 
 	return ScraperConfig{
 		Category:    "nontender",
+		HasPemenangBerkontrak: true,
+		HasRealisasi: false,
 		KodePrefix:  kodePrefix,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "nontender", URL: url, NonTender: &model.NonTenderDetail{}}
@@ -80,6 +82,11 @@ func NonTenderConfig() ScraperConfig {
 		},
 		ExtractEvaluasiKode: func(u *url.URL) string {
 			return(extractKode(u, kodePrefix.Evaluasi))
+		},
+		Enrich: func(results []model.Paket, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
+			for i := range results {
+				results[i].NonTender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
+			}
 		},
 	}
 }

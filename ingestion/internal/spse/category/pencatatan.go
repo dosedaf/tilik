@@ -14,6 +14,8 @@ func PencatatanConfig() ScraperConfig {
 	}
 	return ScraperConfig{
 		Category:    "pencatatan",
+		HasPemenangBerkontrak: false,
+		HasRealisasi: true,
 		KodePrefix:  kodePrefix,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "pencatatan", URL: url, Pencatatan: &model.PencatatanDetail{}}
@@ -71,6 +73,11 @@ func PencatatanConfig() ScraperConfig {
 		},
 		ExtractEvaluasiKode: func(u *url.URL) string {
 			return u.Query().Get("id")
+		},
+		Enrich: func(results []model.Paket, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
+			for i := range results {
+				results[i].Pencatatan.Realisasi = realisasi[results[i].Kode]
+			}
 		},
 	}
 }
