@@ -101,6 +101,7 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 	cfg.Enrich(results, pemenangBerkontrak, realisasi)
 
 	if err := s.ExportToCSV(
+		ctx,
 		results,
 		cfg.Category,
 		); err != nil {

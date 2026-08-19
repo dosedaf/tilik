@@ -14,6 +14,7 @@ import (
 )
 
 func (s *SPSEScraper) ExportToCSV(
+	ctx ScrapeContext,
 	data []model.Paket,
 	category string,
 ) error {
@@ -29,9 +30,10 @@ func (s *SPSEScraper) ExportToCSV(
 	targetDir := "./spse"
 
 	filename := fmt.Sprintf(
-		"spse_%s_%s_%s.csv",
-		model.Pemda,
+		"spse_%s_%s_%s__%s.csv",
+		ctx.Pemda,
 		category,
+		ctx.Year,
 		timestamp,
 		)
 
