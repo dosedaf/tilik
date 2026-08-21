@@ -13,6 +13,7 @@ type FieldRule struct {
 type ScraperConfig struct {
 	Category    string
 	KodePrefix KodePrefix
+	StatusIndex int
 	InitDetail  func(reqURL string) model.Paket 
 	FieldRules  []FieldRule
 

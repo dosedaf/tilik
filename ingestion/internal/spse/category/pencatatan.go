@@ -18,6 +18,7 @@ func PencatatanConfig() ScraperConfig {
 		HasPemenangBerkontrak: false,
 		HasRealisasi: true,
 		KodePrefix:  kodePrefix,
+		StatusIndex: 8,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "pencatatan", URL: url, Pencatatan: &model.PencatatanDetail{}}
 		},

@@ -211,7 +211,7 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 				if ada {
 					realisasi = strings.Join(strSlice, "\n")
 				} else {
-					realisasi = "Tidak ada"
+					realisasi = ""
 				}
 
 				record = []string{
@@ -257,7 +257,7 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 				if ada {
 					realisasi = strings.Join(strSlice, "\n")
 				} else {
-					realisasi = "Tidak ada"
+					realisasi = ""
 				}
 
 			record = []string{

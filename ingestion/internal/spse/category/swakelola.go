@@ -20,6 +20,7 @@ func SwakelolaConfig() ScraperConfig {
 		HasPemenangBerkontrak: false,
 		HasRealisasi: true,
 		KodePrefix:  kodePrefix,
+		StatusIndex: 7,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "swakelola", URL: url, Swakelola: &model.SwakelolaDetail{}}
 		},

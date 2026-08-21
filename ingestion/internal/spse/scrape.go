@@ -205,7 +205,7 @@ func (s *SPSEScraper) FetchIDs(ctx ScrapeContext, token string, cfg category.Scr
 		}
 
 
-		dtRow.Status = row[3].(string)
+		dtRow.Status = row[cfg.StatusIndex].(string)
 
 		dtRows = append(dtRows, dtRow)
 	}

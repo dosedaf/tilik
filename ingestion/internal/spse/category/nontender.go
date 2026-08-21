@@ -20,6 +20,7 @@ func NonTenderConfig() ScraperConfig {
 		HasPemenangBerkontrak: true,
 		HasRealisasi: false,
 		KodePrefix:  kodePrefix,
+		StatusIndex: 3,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "nontender", URL: url, NonTender: &model.NonTenderDetail{}}
 		},

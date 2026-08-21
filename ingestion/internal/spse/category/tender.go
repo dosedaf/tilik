@@ -19,6 +19,7 @@ func TenderConfig() ScraperConfig {
 		HasPemenangBerkontrak: true,
 		HasRealisasi: false,
 		KodePrefix: kodePrefix,
+		StatusIndex: 3,
 		InitDetail: func(url string) model.Paket {
 			return model.Paket{Kategori: "tender", URL: url, Tender: &model.TenderDetail{}}
 		},
