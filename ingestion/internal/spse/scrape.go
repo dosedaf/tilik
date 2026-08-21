@@ -303,7 +303,7 @@ func (s *SPSEScraper)  ScrapePemenang(ctx ScrapeContext, c *colly.Collector, ids
 		}
 
 		mu.Lock()
-		pemenang[kode] = "Tidak ada"
+		pemenang[kode] = ""
 		mu.Unlock()
 	})
 
@@ -360,7 +360,7 @@ func (s *SPSEScraper)  ScrapePemenangBerkontrak(ctx ScrapeContext, c *colly.Coll
 		}
 
 		mu.Lock()
-		pemenang[kode] = "Tidak ada"
+		pemenang[kode] = ""
 		mu.Unlock()
 	})
 
