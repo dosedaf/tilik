@@ -16,6 +16,7 @@ func SwakelolaConfig() ScraperConfig {
 
 	return ScraperConfig{
 		Category:    "swakelola",
+		HasPemenang: false,
 		HasPemenangBerkontrak: false,
 		HasRealisasi: true,
 		KodePrefix:  kodePrefix,
@@ -72,7 +73,7 @@ func SwakelolaConfig() ScraperConfig {
 		ExtractEvaluasiKode: func(u *url.URL) string {
 			return(extractKode(u, kodePrefix.Evaluasi))
 		},
-		Enrich: func(results []model.Paket, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
+		Enrich: func(results []model.Paket, pemenang map[string]string, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
 			for i := range results {
 				results[i].Swakelola.Realisasi = realisasi[results[i].Kode]
 			}

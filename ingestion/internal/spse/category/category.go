@@ -19,11 +19,13 @@ type ScraperConfig struct {
 	ExtractDetailKode func(*url.URL) string
 	ExtractEvaluasiKode func(*url.URL) string
 
+	HasPemenang bool
 	HasPemenangBerkontrak bool
 	HasRealisasi bool
 
 	Enrich func(
 		results []model.Paket,
+		pemenang map[string]string,
 		pemenangBerkontrak map[string]string,
 		realisasi map[string][]model.Realisasi,
 	)

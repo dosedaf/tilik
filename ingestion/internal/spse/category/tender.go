@@ -15,6 +15,7 @@ func TenderConfig() ScraperConfig {
 	}
 	return ScraperConfig{
 		Category:    "tender",
+		HasPemenang: true,
 		HasPemenangBerkontrak: true,
 		HasRealisasi: false,
 		KodePrefix: kodePrefix,
@@ -25,18 +26,18 @@ func TenderConfig() ScraperConfig {
 			{
 				Match: func(k string) bool { return strings.EqualFold(k, "nama tender") },
 				Handle: func(d *model.Paket, v string) {
-					if strings.Contains(v, "Tender Batal") {
-						d.Tender.PemenangBerkontrak = "Tender Batal"
-					}
-					if strings.Contains(v, "Tender Gagal") {
-						d.Tender.PemenangBerkontrak = "Tender Gagal"
-					}
-					if strings.Contains(v, "Seleksi Batal") {
-						d.Tender.PemenangBerkontrak = "Seleksi Batal"
-					}
-					if strings.Contains(v, "Seleksi Gagal") {
-						d.Tender.PemenangBerkontrak = "Seleksi Gagal"
-					}
+					// if strings.Contains(v, "Tender Batal") {
+					// 	d.Tender.PemenangBerkontrak = "Tender Batal"
+					// }
+					// if strings.Contains(v, "Tender Gagal") {
+					// 	d.Tender.PemenangBerkontrak = "Tender Gagal"
+					// }
+					// if strings.Contains(v, "Seleksi Batal") {
+					// 	d.Tender.PemenangBerkontrak = "Seleksi Batal"
+					// }
+					// if strings.Contains(v, "Seleksi Gagal") {
+					// 	d.Tender.PemenangBerkontrak = "Seleksi Gagal"
+					// }
 					// if strings.Contains(v, "Seleksi Ulang") {
 					// 	d.Tender.PemenangBerkontrak = "Seleksi Ulang"
 					// }
@@ -122,8 +123,14 @@ func TenderConfig() ScraperConfig {
 		ExtractEvaluasiKode: func(u *url.URL) string {
 			return(extractKode(u, kodePrefix.Evaluasi))
 		},
-		Enrich: func(results []model.Paket, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
+		Enrich: func(results []model.Paket, pemenang map[string]string, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
 			for i := range results {
+				if results[i].Tender.Pemenang != "" {
+					continue
+				}
+
+				results[i].Tender.Pemenang = pemenang[results[i].Kode]
+
 				if results[i].Tender.PemenangBerkontrak != "" {
 					continue
 				}

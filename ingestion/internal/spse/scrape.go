@@ -79,9 +79,11 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 
 	c := s.NewCollector(cfg.Category, ctx.Pemda)
 	c2 := s.NewCollector(cfg.Category, ctx.Pemda)
+	c3 := s.NewCollector(cfg.Category, ctx.Pemda)
 
 	var results []model.Paket
 	var pemenangBerkontrak map[string]string
+	var pemenang map[string]string
 	var realisasi map[string][]model.Realisasi
 
 	results = s.ScrapeDetails(ctx, c, dtRows, cfg)
@@ -92,19 +94,23 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 		ids = append(ids, val.ID)
 	}
 
+	if cfg.HasPemenang {
+		pemenang = s.ScrapePemenang(ctx, c2, ids, cfg)
+	}
+
 	if cfg.HasPemenangBerkontrak {
-		pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
+		pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c3, ids, cfg)
 	}
 
 	if cfg.HasRealisasi {
-		realisasi = s.ScrapeRealisasi(ctx, c2, ids, cfg)
+		realisasi = s.ScrapeRealisasi(ctx, c3, ids, cfg)
 	}
 
 	if len(results) == 0 {
 		util.PrintVerbose("[%s] no package details scraped", cfg.Category)
 	}
 
-	cfg.Enrich(results, pemenangBerkontrak, realisasi)
+	cfg.Enrich(results, pemenang, pemenangBerkontrak, realisasi)
 
 	if err := s.ExportToCSV(
 		ctx,
@@ -278,6 +284,63 @@ func (s *SPSEScraper) ScrapeDetails(ctx ScrapeContext, c *colly.Collector, dtRow
 
 	c.Wait()
 	return results
+}
+
+func (s *SPSEScraper)  ScrapePemenang(ctx ScrapeContext, c *colly.Collector, ids []string, cfg category.ScraperConfig) map[string]string {
+	pemenang := make(map[string]string)
+	var mu sync.Mutex
+
+	c.OnHTML("html", func(e *colly.HTMLElement) {
+		kode := cfg.ExtractEvaluasiKode(e.Request.URL)
+
+		detailTag := e.DOM.Find("table.table tr:last-child tr td:first-child")
+
+		if detailTag.Length() > 0 {
+			mu.Lock()
+			pemenang[kode] = strings.TrimSpace(detailTag.Text())
+			mu.Unlock()
+			return 
+		}
+
+		mu.Lock()
+		pemenang[kode] = "Tidak ada"
+		mu.Unlock()
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Printf("[%s] error: %v\n", cfg.Category, err)
+	})
+
+	for _, id := range ids {
+		targetURL := GetPath(
+			cfg.Category,
+			ctx.Pemda,
+			id,
+			"pemenang",
+			)
+
+		if targetURL == "" {
+			util.PrintVerbose(
+				"[%s] skipping ID %s: no pemenang berkontrak path",
+				cfg.Category,
+				id,
+				)
+			continue
+		}
+
+		if err := c.Visit(targetURL); err != nil {
+			util.PrintVerbose(
+				"[%s] failed to visit %s: %v",
+				cfg.Category,
+				targetURL,
+				err,
+				)
+		}
+	}
+
+	c.Wait()
+
+	return pemenang
 }
 
 func (s *SPSEScraper)  ScrapePemenangBerkontrak(ctx ScrapeContext, c *colly.Collector, ids []string, cfg category.ScraperConfig) map[string]string {

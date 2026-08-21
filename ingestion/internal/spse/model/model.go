@@ -10,10 +10,10 @@ const (
 )
 
 var ScrapeLimits = map[string]int{
-	"tender":     100,
-	"nontender":  100,
-	"pencatatan": 100,
-	"swakelola":  100,
+	"tender":     10,
+	"nontender":  10,
+	"pencatatan": 10,
+	"swakelola":  10,
 }
 
 type CategoryPath struct {
@@ -111,6 +111,7 @@ type TenderDetail struct {
 	KualifikasiUsaha string
 	SyaratKualifikasi string
 	Peserta string
+	Pemenang string
 	PemenangBerkontrak string
 }
 
@@ -123,6 +124,7 @@ type NonTenderDetail struct {
 	Lokasi string
 	SyaratKualifikasi string
 	Peserta string
+	Pemenang string
 	PemenangBerkontrak string
 }
 

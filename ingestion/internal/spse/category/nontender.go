@@ -16,6 +16,7 @@ func NonTenderConfig() ScraperConfig {
 
 	return ScraperConfig{
 		Category:    "nontender",
+		HasPemenang: true,
 		HasPemenangBerkontrak: true,
 		HasRealisasi: false,
 		KodePrefix:  kodePrefix,
@@ -26,14 +27,14 @@ func NonTenderConfig() ScraperConfig {
 			{
 				Match: func(k string) bool { return strings.EqualFold(k, "nama paket") },
 				Handle: func(d *model.Paket, v string) { 
-					if strings.Contains(v, "Paket Gagal") {
-						d.NonTender.PemenangBerkontrak = "Paket Gagal"
-					}
-
-					if strings.Contains(v, "Paket Batal") {
-						d.NonTender.PemenangBerkontrak = "Paket Batal"
-					}
-
+					// if strings.Contains(v, "Paket Gagal") {
+					// 	d.NonTender.PemenangBerkontrak = "Paket Gagal"
+					// }
+					//
+					// if strings.Contains(v, "Paket Batal") {
+					// 	d.NonTender.PemenangBerkontrak = "Paket Batal"
+					// }
+					//
 					// if strings.Contains(v, "Paket Ulang") {
 					// 	d.NonTender.PemenangBerkontrak = "Paket Ulang"
 					// }
@@ -110,8 +111,18 @@ func NonTenderConfig() ScraperConfig {
 		ExtractEvaluasiKode: func(u *url.URL) string {
 			return(extractKode(u, kodePrefix.Evaluasi))
 		},
-		Enrich: func(results []model.Paket, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
+		Enrich: func(results []model.Paket, pemenang map[string]string, pemenangBerkontrak map[string]string, realisasi map[string][]model.Realisasi) {
 			for i := range results {
+				if results[i].NonTender.Pemenang != "" {
+					continue
+				}
+
+				results[i].NonTender.Pemenang = pemenang[results[i].Kode]
+
+				if results[i].NonTender.PemenangBerkontrak != "" {
+					continue
+				}
+
 				results[i].NonTender.PemenangBerkontrak = pemenangBerkontrak[results[i].Kode]
 			}
 		},

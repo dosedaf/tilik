@@ -71,6 +71,7 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 			"Lokasi Pekerjaan",
 			"Kualifikasi Usaha",
 			"Jumlah Peserta",
+			"Pemenang",
 			"Pemenang Berkontrak",
 			"URL",
 		}
@@ -92,6 +93,7 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 			"Jenis Kontrak",
 			"Lokasi Pekerjaan",
 			"Jumlah Peserta",
+			"Pemenang",
 			"Pemenang Berkontrak",
 			"URL",
 		}
@@ -155,6 +157,7 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 				d.Tender.Lokasi,
 				d.Tender.KualifikasiUsaha,
 				d.Tender.Peserta,
+				d.Tender.Pemenang,
 				d.Tender.PemenangBerkontrak,
 				d.URL,
 			}
@@ -176,6 +179,7 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 				d.NonTender.JenisKontrak,
 				d.NonTender.Lokasi,
 				d.NonTender.Peserta,
+				d.NonTender.PemenangBerkontrak,
 				d.NonTender.PemenangBerkontrak,
 				d.URL,
 			}
