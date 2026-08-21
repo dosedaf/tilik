@@ -10,10 +10,10 @@ const (
 )
 
 var ScrapeLimits = map[string]int{
-	"tender":     10,
-	"nontender":  10,
-	"pencatatan": 10,
-	"swakelola":  10,
+	"tender":     100,
+	"nontender":  100,
+	"pencatatan": 100,
+	"swakelola":  100,
 }
 
 type CategoryPath struct {
@@ -69,6 +69,11 @@ type DTResponse struct {
 	Data            [][]interface{} `json:"data"`
 }
 
+type DTRow struct {
+	ID string
+	Status string
+}
+
 type RUP struct {
 	Kode string
 	Nama string
@@ -83,6 +88,7 @@ type Paket struct {
 	UraianSingkatPekerjaan string
 	TanggalPembuatan string
 	Instansi string
+	Status string
 	Satker string
 	Tahun	string
 	Pagu int64
@@ -96,7 +102,6 @@ type Paket struct {
 }
 
 type TenderDetail struct {
-	Tahap string
 	JenisPengadaan	string
 	MetodePengadaan string
 	ReverseAuction string
@@ -110,10 +115,9 @@ type TenderDetail struct {
 }
 
 type NonTenderDetail struct {
-	Tahap string
 	JenisPengadaan	string
 	MetodePengadaan string
-	OAP bool
+	OAP string
 	JenisKontrak string
 	HPS int64
 	Lokasi string

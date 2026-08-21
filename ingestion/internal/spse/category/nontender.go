@@ -24,20 +24,25 @@ func NonTenderConfig() ScraperConfig {
 		},
 		FieldRules: []FieldRule{
 			{
-				Match: func(k string) bool { return strings.EqualFold(k, "kode paket") },
-				Handle: func(d *model.Paket, v string) { d.Kode = v },
-			},
-			{
 				Match: func(k string) bool { return strings.EqualFold(k, "nama paket") },
-				Handle: func(d *model.Paket, v string) { d.Nama = v },
+				Handle: func(d *model.Paket, v string) { 
+					if strings.Contains(v, "Paket Gagal") {
+						d.NonTender.PemenangBerkontrak = "Paket Gagal"
+					}
+
+					if strings.Contains(v, "Paket Batal") {
+						d.NonTender.PemenangBerkontrak = "Paket Batal"
+					}
+
+					// if strings.Contains(v, "Paket Ulang") {
+					// 	d.NonTender.PemenangBerkontrak = "Paket Ulang"
+					// }
+					d.Nama = v 
+				},
 			},
 			{
 				Match:  func(k string) bool { return strings.EqualFold(k, "tanggal pembuatan") },
 				Handle: func(d *model.Paket, v string) { d.TanggalPembuatan = v },
-			},
-			{
-				Match:  func(k string) bool { return strings.EqualFold(k, "tahap paket saat ini") },
-				Handle: func(d *model.Paket, v string) { d.NonTender.Tahap = v },
 			},
 			{
 				Match:  func(k string) bool { return strings.Contains(k, "k/l/pd") },
@@ -63,12 +68,7 @@ func NonTenderConfig() ScraperConfig {
 			{ // sementara OAP string dulu, nanti kalo fix Ya Tidak ganti ke bool dgn if block
 				Match:  func(k string) bool { return strings.Contains(k, "khusus orang asli papua") },
 				Handle: func(d *model.Paket, v string) { 
-					d.NonTender.OAP = true
-
-					if v == "Tidak" {
-						d.NonTender.OAP = false
-					}
-
+					d.NonTender.OAP = v
 				},
 			},
 			{

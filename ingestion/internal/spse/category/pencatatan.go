@@ -22,10 +22,6 @@ func PencatatanConfig() ScraperConfig {
 		},
 		FieldRules: []FieldRule{
 			{
-				Match: func(k string) bool { return strings.EqualFold(k, "kode paket") },
-				Handle: func(d *model.Paket, v string) { d.Kode = v },
-			},
-			{
 				Match: func(k string) bool { return strings.EqualFold(k, "nama paket") },
 				Handle: func(d *model.Paket, v string) { d.Nama = v },
 			},

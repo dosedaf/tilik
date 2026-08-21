@@ -55,7 +55,7 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 		return err
 	}
 
-	ids, err := s.FetchIDs(
+	dtRows, err := s.FetchIDs(
 		ctx,
 		token,
 		cfg,
@@ -66,13 +66,13 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 		return err
 	}
 
-	if limit := model.ScrapeLimits[cfg.Category]; limit > 0 && len(ids) > limit {
-		ids = ids[:limit]
+	if limit := model.ScrapeLimits[cfg.Category]; limit > 0 && len(dtRows) > limit {
+		dtRows = dtRows[:limit]
 	} else if limit == 0{
-		ids = ids[:0] 
+		dtRows = dtRows[:0] 
 	}
 
-	if len(ids) == 0 {
+	if len(dtRows) == 0 {
 		util.PrintVerbose("[%s] no records found", cfg.Category)
 		return nil
 	}
@@ -84,7 +84,13 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 	var pemenangBerkontrak map[string]string
 	var realisasi map[string][]model.Realisasi
 
-	results = s.ScrapeDetails(ctx, c, ids, cfg)
+	results = s.ScrapeDetails(ctx, c, dtRows, cfg)
+
+	var ids []string
+
+	for _, val := range dtRows {
+		ids = append(ids, val.ID)
+	}
 
 	if cfg.HasPemenangBerkontrak {
 		pemenangBerkontrak = s.ScrapePemenangBerkontrak(ctx, c2, ids, cfg)
@@ -111,11 +117,7 @@ func (s *SPSEScraper) scrapeCategory(ctx ScrapeContext, cfg category.ScraperConf
 	return nil
 }
 
-func (s *SPSEScraper) FetchIDs(
-	ctx ScrapeContext,
-	token string,
-	cfg category.ScraperConfig,
-) ([]string, error) {
+func (s *SPSEScraper) FetchIDs(ctx ScrapeContext, token string, cfg category.ScraperConfig,) ([]model.DTRow, error) {
 	apiURL := GetPath(cfg.Category, ctx.Pemda, "", "dt")
 
 	if apiURL == "" {
@@ -176,7 +178,7 @@ func (s *SPSEScraper) FetchIDs(
 		return nil, err
 	}
 
-	var ids []string
+	var dtRows []model.DTRow
 
 	for _, row := range dtResp.Data {
 		// printVerbose("[%s] ROW: %#v", category, row)
@@ -184,27 +186,34 @@ func (s *SPSEScraper) FetchIDs(
 			continue
 		}
 
+		var dtRow model.DTRow
+
 		switch val := row[0].(type) {
 		case string:
 			if val != "" {
-				ids = append(ids, val)
+				dtRow.ID = val
 			}
 
 		case float64:
-			ids = append(ids, fmt.Sprintf("%.0f", val))
+			dtRow.ID = fmt.Sprintf("%.f", val)
 		}
+
+
+		dtRow.Status = row[3].(string)
+
+		dtRows = append(dtRows, dtRow)
 	}
 
 	util.PrintVerbose(
 		"[%s] payload extracted: %d records found",
 		cfg.Category,
-		len(ids),
+		len(dtRows),
 		)
 
-	return ids, nil
+	return dtRows, nil
 }
 
-func (s *SPSEScraper) ScrapeDetails(ctx ScrapeContext, c *colly.Collector, ids []string, cfg category.ScraperConfig) []model.Paket {
+func (s *SPSEScraper) ScrapeDetails(ctx ScrapeContext, c *colly.Collector, dtRows []model.DTRow, cfg category.ScraperConfig) []model.Paket {
 	var results []model.Paket
 	var mu sync.Mutex
 	var scraped atomic.Int64
@@ -212,6 +221,9 @@ func (s *SPSEScraper) ScrapeDetails(ctx ScrapeContext, c *colly.Collector, ids [
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
 		detail := cfg.InitDetail(e.Request.URL.String())
+
+		detail.Kode = e.Request.Ctx.Get("ID")
+		detail.Status = e.Request.Ctx.Get("status")
 
 		if detail.Kode == "" {
 			detail.Kode = cfg.ExtractDetailKode(e.Request.URL)
@@ -240,23 +252,30 @@ func (s *SPSEScraper) ScrapeDetails(ctx ScrapeContext, c *colly.Collector, ids [
 		results = append(results, detail)
 		mu.Unlock()
 		current := scraped.Add(1)
-		util.PrintVerbose("[%s] <= 200 OK %s %d/%d", cfg.Category, detail.Kode, current, len(ids))
+		util.PrintVerbose("[%s] <= 200 OK %s %d/%d", cfg.Category, detail.Kode, current, len(dtRows))
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
 		util.PrintVerbose("[%s] <= %d ERROR %v", cfg.Category, r.StatusCode, err)
 	})
 
-	for _, id := range ids {
-		targetURL := GetPath(cfg.Category, ctx.Pemda, id, "pengumuman")
+	for _, dtRow := range dtRows {
+		targetURL := GetPath(cfg.Category, ctx.Pemda, dtRow.ID, "pengumuman")
 		if targetURL == "" {
-			util.PrintVerbose("[%s] skipping ID %s: no %s path", cfg.Category, id, "pengumuman")
+			util.PrintVerbose("[%s] skipping ID %s: no %s path", cfg.Category, dtRow.ID, "pengumuman")
 			continue
 		}
-		if err := c.Visit(targetURL); err != nil {
+
+		reqCtx := colly.NewContext()
+		reqCtx.Put("ID", dtRow.ID)
+		reqCtx.Put("status", dtRow.Status)
+
+		if err := c.Request("GET", targetURL, nil, reqCtx, nil); err != nil {
 			util.PrintVerbose("[%s] failed to visit %s: %v", cfg.Category, targetURL, err)
 		}
 	}
+
+
 	c.Wait()
 	return results
 }

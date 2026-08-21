@@ -37,7 +37,6 @@ func NewSPSEScraper() *SPSEScraper {
 	}
 }
 
-
 func (s *SPSEScraper) GetToken(pemda string, cfg category.ScraperConfig) (string, error) {
 	reqURL := GetPath(cfg.Category, pemda, "", "portal")
 

@@ -23,10 +23,6 @@ func TenderConfig() ScraperConfig {
 		},
 		FieldRules: []FieldRule{
 			{
-				Match: func(k string) bool { return strings.EqualFold(k, "kode tender") },
-				Handle: func(d *model.Paket, v string) { d.Kode = v },
-			},
-			{
 				Match: func(k string) bool { return strings.EqualFold(k, "nama tender") },
 				Handle: func(d *model.Paket, v string) {
 					if strings.Contains(v, "Tender Batal") {
@@ -38,6 +34,18 @@ func TenderConfig() ScraperConfig {
 					if strings.Contains(v, "Seleksi Batal") {
 						d.Tender.PemenangBerkontrak = "Seleksi Batal"
 					}
+					if strings.Contains(v, "Seleksi Gagal") {
+						d.Tender.PemenangBerkontrak = "Seleksi Gagal"
+					}
+					// if strings.Contains(v, "Seleksi Ulang") {
+					// 	d.Tender.PemenangBerkontrak = "Seleksi Ulang"
+					// }
+					// if strings.Contains(v, "Evaluasi Ulang") {
+					// 	d.Tender.PemenangBerkontrak = "Evaluasi Ulang"
+					// }
+					// if strings.Contains(v, "Tender Ulang") {
+					// 	d.Tender.PemenangBerkontrak = "Tender Ulang"
+					// }
 
 					d.Nama = v
 				},
@@ -45,10 +53,6 @@ func TenderConfig() ScraperConfig {
 			{
 				Match:  func(k string) bool { return strings.EqualFold(k, "tanggal pembuatan") },
 				Handle: func(d *model.Paket, v string) { d.TanggalPembuatan = v },
-			},
-			{
-				Match:  func(k string) bool { return strings.EqualFold(k, "tahap tender saat ini") },
-				Handle: func(d *model.Paket, v string) { d.Tender.Tahap = v },
 			},
 			{
 				Match:  func(k string) bool { return strings.Contains(k, "k/l/pd") },

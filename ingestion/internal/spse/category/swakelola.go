@@ -24,10 +24,6 @@ func SwakelolaConfig() ScraperConfig {
 		},
 		FieldRules: []FieldRule{
 			{
-				Match: func(k string) bool { return strings.EqualFold(k, "kode swakelola") },
-				Handle: func(d *model.Paket, v string) { d.Kode = v },
-			},
-			{
 				Match: func(k string) bool { return strings.EqualFold(k, "nama swakelola") },
 				Handle: func(d *model.Paket, v string) { d.Nama = v },
 			},
