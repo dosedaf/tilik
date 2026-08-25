@@ -22,15 +22,15 @@ def validate(df):
     # required columns
     required = {
         'kategori',
-        'kode_paket',
-        'nama_paket',
+        'kode_tender',
+        'nama_tender',
         'tanggal_pembuatan',
         'k/l/pd/instansi_lainnya',
         'status',
         'satuan_kerja',
         'jenis_pengadaan',
         'metode_pengadaan',
-        'khusus_orang_asli_papua_(oap)',
+        'reverse_auction',
         'tahun_anggaran',
         'nilai_pagu_(dalam_rupiah)',
         'nilai_hps_(dalam_rupiah)',
@@ -45,16 +45,15 @@ def validate(df):
     assert required.issubset(df.columns)
 
     # types
-    assert df['kode_paket'].dtype == 'int64'
-
-    assert pd.api.types.is_string_dtype(df['nama_paket'])
+    assert df['kode_tender'].dtype == 'int64'
+    
+    assert pd.api.types.is_string_dtype(df['nama_tender'])
     assert pd.api.types.is_string_dtype(df['k/l/pd/instansi_lainnya'])
     assert pd.api.types.is_string_dtype(df['status'])
     assert pd.api.types.is_string_dtype(df['satuan_kerja'])
     assert pd.api.types.is_string_dtype(df['jenis_pengadaan'])
     assert pd.api.types.is_string_dtype(df['metode_pengadaan'])
-
-    assert pd.api.types.is_bool_dtype(df['khusus_orang_asli_papua_(oap)'])
+    assert pd.api.types.is_string_dtype(df['reverse_auction'])
 
     assert pd.api.types.is_datetime64_dtype(df['tanggal_pembuatan'])
 
@@ -78,68 +77,23 @@ def validate(df):
     assert (df['jumlah_peserta'] >= 0).all()
 
     # required data
-    assert df['kode_paket'].notna().all()
-    assert df['nama_paket'].notna().all()
+    assert df['kode_tender'].notna().all()
+    assert df['nama_tender'].notna().all()
 
 if __name__ == "__main__":
     try:
-        df = pd.read_csv("/home/yoda/projects/tilik/data/spse/wonogirikab/2026/spse_nontender_20260821_145425.csv")
+        df = pd.read_csv("/home/yoda/projects/tilik/data/spse/wonogirikab/2026/spse_tender_20260821_145421.csv")
 
-        # hal yang gua pelajarin
-        # gimana kalo schema data beda2? pdhl di source yg sama.
-        # jan di pretty2 in dah
-        
-        # kategori                           str -> AMAN
-        # kode_paket                       int64 -> ganti ke kode (ntar di scraper aja)
-        # nama_paket                         str -> sama, nama aja
-        # tanggal_pembuatan                  str -> parse jadi datetime
-        # k/l/pd/instansi_lainnya            str -> biarin, standarisasi kalo ada masalah
-        # status                             str -> sama 
-        # satuan_kerja                       str -> sama
-        # jenis_pengadaan                    str -> sama
-        # metode_pengadaan                   str -> sama
-        # khusus_orang_asli_papua_(oap)      str -> parse ke bool
-        # tahun_anggaran                     str -> clean value krn ada yg dup
-        # nilai_pagu_(dalam_rupiah)        int64 -> pakein assertion dll
-        # nilai_hps_(dalam_rupiah)         int64 -> sama
-        # jenis_kontrak                      str -> biarin, standarisasi kalo ada masalah
-        # lokasi_pekerjaan                   str -> sama
-        # jumlah_peserta                     str -> parse jadi angka doang 
-        # pemenang                           str -> biarin, kosong = normal
-        # pemenang_berkontrak                str -> biarin, kosong = normal
-        # url                                str -> biarin
-        
-        # standarize column names
         df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-        # ini gaperlu kalo scraper udh diganti tp for now biarin aj
-        # reindexxing
-        
-        # parse to date
         df['tanggal_pembuatan'] = df['tanggal_pembuatan'].replace(month_map, regex=True)
         df['tanggal_pembuatan'] = pd.to_datetime(df['tanggal_pembuatan'], format='%d %b %Y')
 
-        oap_map = {
-            "Ya": True,
-            "Tidak": False,
-        }
-
-        # parse to bool
-        df['khusus_orang_asli_papua_(oap)'] = (
-            df['khusus_orang_asli_papua_(oap)']
-            .replace(oap_map).astype(bool)
-        )
-
-        # parse to int
-        df["jumlah_peserta"] = pd.to_numeric(
-            df["jumlah_peserta"].str.extract(r"(\d+)")[0],
-            errors="coerce"
-)
-
-        # delete dup words
         df['tahun_anggaran'] = df['tahun_anggaran'].apply(
             lambda x: " ".join(dict.fromkeys(x.split()))
         )
+
+        df['pemenang_berkontrak'] = df['pemenang_berkontrak'].astype(str)
 
         validate(df)
         df.to_csv("cleaned.csv", index=False)
