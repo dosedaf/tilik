@@ -82,7 +82,8 @@ def validate(df):
 
 if __name__ == "__main__":
     try:
-        df = pd.read_csv("/home/yoda/projects/tilik/data/spse/wonogirikab/2026/spse_tender_20260821_145421.csv")
+        filename = "/home/yoda/projects/tilik/data/spse/wonogirikab/2026/spse_tender_20260821_145421.csv"
+        df = pd.read_csv(filename)
 
         df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
@@ -96,7 +97,7 @@ if __name__ == "__main__":
         df['pemenang_berkontrak'] = df['pemenang_berkontrak'].astype(str)
 
         validate(df)
-        df.to_csv("cleaned.csv", index=False)
+        df.to_csv(f"{filename}_cleaned", index=False)
 
     except Exception as e:
         logging.exception("etl failed")

@@ -83,7 +83,8 @@ def validate(df):
 
 if __name__ == "__main__":
     try:
-        df = pd.read_csv("/home/yoda/projects/tilik/data/spse/wonogirikab/2026/spse_nontender_20260821_145425.csv")
+        filename = "/home/yoda/projects/tilik/data/spse/wonogirikab/2026/spse_nontender_20260821_145425.csv"
+        df = pd.read_csv(filename)
 
         # hal yang gua pelajarin
         # gimana kalo schema data beda2? pdhl di source yg sama.
@@ -142,7 +143,7 @@ if __name__ == "__main__":
         )
 
         validate(df)
-        df.to_csv("cleaned.csv", index=False)
+        df.to_csv(f"{filename}_cleaned", index=False)
 
     except Exception as e:
         logging.exception("etl failed")
