@@ -101,10 +101,14 @@ func NonTenderConfig() ScraperConfig {
 				Match:  func(k string) bool { return strings.Contains(k, "lokasi") },
 				Handle: func(d *model.Paket, v string) { d.NonTender.Lokasi = v },
 			},
-			{
-				Match:  func(k string) bool { return strings.EqualFold(k, "peserta non tender") },
-				Handle: func(d *model.Paket, v string) { d.NonTender.Peserta = v },
+{
+				Match:  func(k string) bool { return strings.EqualFold(k, "peserta tender") },
+				Handle: func(d *model.Paket, v string) {
+					words := strings.Fields(v)
+					d.Tender.Peserta = words[0]
+				},
 			},
+
 		},
 		ExtractDetailKode: func(u *url.URL) string {
 			return(extractKode(u, kodePrefix.Detail))
