@@ -64,18 +64,21 @@ if __name__ == "__main__":
         # # yg jelas ya hps pagu gaboleh min, peserta juga. keknya sisanya aman sih, kek kalo kategorikal mau diapain ege
         #
         
-        words_to_remove = {"tender", "paket", "seleksi", "ulang", "batal", "gagal"}
-        text = "bruh"
-
+        # PRETTIER? FUCK IT
+        # words_to_remove = {"tender", "paket", "seleksi", "ulang", "batal", "gagal"}
+        # text = "bruh"
+        # df['nama'] = df['nama'].apply(
+        #     lambda x: " ".join([word for word in x.split() if word not in words_to_remove])
+        # )
+        #
         for col in df.columns:
             if "kode" in col:
                 df['kode'] = df[col]
-                df = df.drop(columns=col)
+                # df = df.drop(columns=col)
 
             if "nama" in col:
                 df['nama'] = df[col]
-                df = df.drop(columns=col)
-
+                # df = df.drop(columns=col)
 
         cols_to_move = ['kategori', 'nama', 'kode']
 
@@ -83,9 +86,6 @@ if __name__ == "__main__":
 
         df = df.reindex(columns=new_order)
 
-        df['nama'] = df['nama'].apply(
-            lambda x: " ".join([word for word in x.split() if word not in words_to_remove])
-        )
         
         # fix data type + clean values / format
         # tanggal_pembuatan, sekalian parse date
@@ -93,10 +93,25 @@ if __name__ == "__main__":
         df['tanggal_pembuatan'] = pd.to_datetime(df['tanggal_pembuatan'], format='%d %b %Y')
 
         # ke bool
-        df['khusus_orang_asli_papua_(oap)'] = (df['khusus_orang_asli_papua_(oap)'] != 'Tidak').astype(bool)
+        # df['khusus_orang_asli_papua_(oap)'] = (df['khusus_orang_asli_papua_(oap)'] != 'Tidak').astype(bool)
+        oap_map = {
+            "Ya": True,
+            "Tidak": False,
+        }
+
+        df['khusus_orang_asli_papua_(oap)'] = (
+            df['khusus_orang_asli_papua_(oap)']
+            .replace(oap_map)
+        )
+
 
         # ke int
-        df['jumlah_peserta'] = df['jumlah_peserta'].str.split().str[0].astype(int)
+        # df['jumlah_peserta'] = df['jumlah_peserta'].str.split().str[0].astype(int)
+        
+        df["jumlah_peserta"] = pd.to_numeric(
+            df["jumlah_peserta"].str.extract(r"(\d+)")[0],
+            errors="coerce"
+)
 
         # fix duplicated words
         df['tahun_anggaran'] = df['tahun_anggaran'].apply(
