@@ -7,7 +7,7 @@ import (
 func main() {
 	s := spse.NewSPSEScraper()
 
-	// pemdas := []string{
+	pemdas := []string{
 	//    "banjarnegarakab",
 	//    "banyumaskab",
 	//    "batangkab",
@@ -18,12 +18,12 @@ func main() {
 	//    "demakkab",
 	//    "grobogan",
 	//    "jepara",
-	//    "karanganyarkab",
+	"karanganyarkab",
 	//    "kebumenkab",
 	//    "kendalkab",
-	//    "klaten",
-	//    "kuduskab",
-	//    "magelangkab",
+	// "klaten",
+	 //    "kuduskab",
+	// "magelangkab",
 	//    "patikab",
 	//    "pekalongankab",
 	//    "pemalangkab",
@@ -31,26 +31,27 @@ func main() {
 	//    "purworejokab",
 	//    "rembangkab",
 	//    "semarangkab",
-	//    "sragenkab",
-	//    "sukoharjokab",
+	// "sragenkab",
+	"sukoharjokab",
 	//    "tegalkab",
 	//    "temanggungkab",
-	//    "wonogirikab",
+	"wonogirikab",
 	//    "wonosobokab",
 	//
 	//    "magelangkab",
 	//    "pekalongankota",
-	//    "salatiga",
+	// "salatiga",
 	//    "semarangkab",
-	//    "surakarta",
+	"surakarta",
 	//    "tegalkab",
-	// }
+	}
 	
-	pemda := []string{"wonogirikab"}
+	// pemda := []string{"wonogirikab"}
 
 	years := []string{
+		"2025",
 		"2026",
 	}
 
-	s.Scrape(pemda, years)
+	s.Scrape(pemdas, years)
 }

@@ -1,7 +1,10 @@
 import pandas as pd
 import logging
+from pathlib import Path
+import os
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 month_map = {
     "Januari": "Jan",
@@ -17,6 +20,20 @@ month_map = {
     "November": "Nov",
     "Desember": "Dec",
 }
+
+def transform(df) -> pd.DataFrame:
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+
+    df['tanggal_pembuatan'] = df['tanggal_pembuatan'].replace(month_map, regex=True)
+    df['tanggal_pembuatan'] = pd.to_datetime(df['tanggal_pembuatan'], format='%d %b %Y')
+
+    df['tahun_anggaran'] = df['tahun_anggaran'].apply(
+        lambda x: " ".join(dict.fromkeys(x.split()))
+    )
+
+    df['pemenang_berkontrak'] = df['pemenang_berkontrak'].astype(str)
+
+    return df
 
 def validate(df):
     # required columns
@@ -42,7 +59,7 @@ def validate(df):
         'url',
     }
 
-    assert required.issubset(df.columns)
+    assert required.issubset(df.columns), f'kurang kolom: {df.columns.values}'
 
     # types
     assert df['kode_tender'].dtype == 'int64'
@@ -80,24 +97,33 @@ def validate(df):
     assert df['kode_tender'].notna().all()
     assert df['nama_tender'].notna().all()
 
+base_path = Path('/home/yoda/projects/tilik/data/spse')
+
 if __name__ == "__main__":
     try:
-        filename = "/home/yoda/projects/tilik/data/spse/wonogirikab/2026/spse_tender_20260821_145421.csv"
-        df = pd.read_csv(filename)
+        csvs = []
+        # gimana cara pilih kalo ad bnyk dobel2 ingestionnya
+        for pemda in base_path.iterdir():
+            if pemda.is_dir():
+                print(f'{pemda}')
+                os.chdir(pemda)
+                for year in os.listdir():
+                    os.chdir(year)
+                    for csv in os.listdir():
+                        if 'tender' in csv:
+                            csvs.append(f'{pemda}/{year}/{csv}')
+                    os.chdir('..')
+                os.chdir(base_path)
 
-        df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+        for csv in csvs: 
+            df = pd.read_csv(csv)
+            df = transform(df)
+            validate(df)
 
-        df['tanggal_pembuatan'] = df['tanggal_pembuatan'].replace(month_map, regex=True)
-        df['tanggal_pembuatan'] = pd.to_datetime(df['tanggal_pembuatan'], format='%d %b %Y')
+            file_path = Path(f'data/{csv}_cleaned.csv')
+            file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        df['tahun_anggaran'] = df['tahun_anggaran'].apply(
-            lambda x: " ".join(dict.fromkeys(x.split()))
-        )
-
-        df['pemenang_berkontrak'] = df['pemenang_berkontrak'].astype(str)
-
-        validate(df)
-        df.to_csv(f"{filename}_cleaned", index=False)
+            df.to_csv(file_path, index=False)
 
     except Exception as e:
         logging.exception("etl failed")
