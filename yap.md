@@ -13,3 +13,7 @@ transformation
 -better raw csv  ingest taruh mana? terus enaknya load buat etl nya gimana?
 -opsi 1, ga sentuh ingestion, load tiap pemda, load tiap year, filename dijadiin target dir aja. misal tender_wonogiri_2025 brati wonogirikab/2025/tender_wonogiri_2025
 
+1 sep
+-keknya udh waktunya gua benerin scraper biar reliable deah
+[tender] error: Get "https://spse.inaproc.id/wonogirikab/evaluasi/10068511000/pemenangberkontrak": context deadline exceede
+d (Client.Timeout exceeded while awaiting headers)
