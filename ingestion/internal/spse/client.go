@@ -28,7 +28,7 @@ func NewSPSEScraper() *SPSEScraper {
 
 	client := &http.Client{
 		Jar:     jar,
-		Timeout: 30 * time.Second,
+		Timeout: 60 * time.Second,
 	}
 
 

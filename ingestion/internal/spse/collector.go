@@ -28,7 +28,7 @@ func (s *SPSEScraper) NewCollector(category string, pemda string) (*colly.Collec
 
 	err = c.Limit(&colly.LimitRule{
 		DomainGlob:  "*spse.inaproc.id*",
-		Parallelism: 8,
+		Parallelism: 4,
 		Delay:       time.Second / 2,
 	})
 

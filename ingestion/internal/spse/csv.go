@@ -22,15 +22,17 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 			)
 	}
 
-	timestamp := time.Now().Format("20060102_150405")
+	runID := time.Now().Format("2006-01-02_150405")
 
-	targetDir := fmt.Sprintf("../data/spse/%s/%s", ctx.Pemda, ctx.Year)
+	targetDir := filepath.Join(
+		"../data/spse",
+		ctx.Pemda,
+		ctx.Year,
+		runID,
+		)
 
-	filename := fmt.Sprintf(
-		"spse_%s_%s.csv",
-		category,
-		timestamp,
-	)
+	filename := category + ".csv"
+	path := filepath.Join(targetDir, filename)
 
 	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
@@ -38,9 +40,7 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 		return err
 	}
 
-	fullPath := filepath.Join(targetDir, filename)
-
-	file, err := os.Create(fullPath)
+	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
