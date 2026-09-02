@@ -11,9 +11,9 @@ const (
 
 var ScrapeLimits = map[string]int{
 	"tender":     1,
-	"nontender":  0,
-	"pencatatan": 0,
-	"swakelola":  0,
+	"nontender":  1,
+	"pencatatan": 1,
+	"swakelola":  1,
 }
 
 type CategoryPath struct {
