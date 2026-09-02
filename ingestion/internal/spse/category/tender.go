@@ -6,6 +6,8 @@ import (
 
 	"ingestion/internal/spse/model"
 	"ingestion/util"
+
+	"github.com/gocolly/colly/v2"
 )
 
 func TenderConfig() ScraperConfig {
@@ -118,6 +120,33 @@ func TenderConfig() ScraperConfig {
 				Handle: func(d *model.Paket, v string) {
 					words := strings.Fields(v)
 					d.Tender.Peserta = words[0]
+				},
+			},
+			{
+				Match: func(k string) bool {
+					return strings.EqualFold(k, "rencana umum pengadaan")
+				},
+
+				HandleRow: func(d *model.Paket, row *colly.HTMLElement) {
+					row.ForEach("table.table-sm > tbody > tr", func(i int, rupRow *colly.HTMLElement) {
+						if i == 0 {
+							return
+						}
+
+						cells := rupRow.DOM.ChildrenFiltered("td")
+
+						if cells.Length() < 3 {
+							return
+						}
+
+						kodeRUP := strings.TrimSpace(cells.Eq(0).Text())
+						namaPaket := strings.TrimSpace(cells.Eq(1).Text())
+						sumberDana := strings.TrimSpace(cells.Eq(2).Text())
+
+						d.RUP.Kode = kodeRUP
+						d.RUP.Nama = namaPaket
+						d.RUP.SumberDana = sumberDana
+					})
 				},
 			},
 		},

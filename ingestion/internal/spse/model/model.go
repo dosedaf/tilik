@@ -10,10 +10,10 @@ const (
 )
 
 var ScrapeLimits = map[string]int{
-	"tender":     20,
-	"nontender":  20,
-	"pencatatan": 20,
-	"swakelola":  20,
+	"tender":     1,
+	"nontender":  0,
+	"pencatatan": 0,
+	"swakelola":  0,
 }
 
 type CategoryPath struct {
@@ -84,7 +84,7 @@ type Paket struct {
 	Kategori string
 	Kode	string
 	Nama string
-	RUP []RUP
+	RUP RUP
 	UraianSingkatPekerjaan string
 	TanggalPembuatan string
 	Instansi string

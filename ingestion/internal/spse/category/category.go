@@ -3,11 +3,14 @@ package category
 import (
 	"net/url"
 	"ingestion/internal/spse/model"
+
+	"github.com/gocolly/colly/v2"
 )
 
 type FieldRule struct {
 	Match  func(keyLower string) bool
 	Handle func(detail *model.Paket, val string)
+	HandleRow func(detail *model.Paket, row *colly.HTMLElement)
 }
 
 type ScraperConfig struct {

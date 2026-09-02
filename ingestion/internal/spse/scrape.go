@@ -237,19 +237,39 @@ func (s *SPSEScraper) ScrapeDetails(ctx ScrapeContext, c *colly.Collector, dtRow
 			detail.Kode = cfg.ExtractDetailKode(e.Request.URL)
 		}
 
-		e.ForEach("table.table tr", func(_ int, row *colly.HTMLElement) {
-			rawKey := strings.TrimSpace(row.ChildText("th"))
-			rawVal := strings.TrimSpace(row.ChildText("td"))
-			keyLower := strings.ToLower(wsRegex.ReplaceAllString(rawKey, " "))
-			val := wsRegex.ReplaceAllString(rawVal, " ")
-			if keyLower == "" || val == "" {
+		e.ForEach("table.table-bordered > tbody > tr", func(_ int, row *colly.HTMLElement) {
+			rawKey := strings.TrimSpace(
+				row.DOM.ChildrenFiltered("th").Text(),
+				)
+
+			keyLower := strings.ToLower(
+				wsRegex.ReplaceAllString(rawKey, " "),
+				)
+
+			if keyLower == "" {
 				return
 			}
+
 			for _, rule := range cfg.FieldRules {
-				if rule.Match(keyLower) {
-					rule.Handle(&detail, val)
-					break
+				if !rule.Match(keyLower) {
+					continue
 				}
+
+				if rule.HandleRow != nil {
+					rule.HandleRow(&detail, row)
+				} else if rule.Handle != nil {
+					val := strings.TrimSpace(
+						row.DOM.ChildrenFiltered("td").Text(),
+						)
+
+					val = wsRegex.ReplaceAllString(val, " ")
+
+					if val != "" {
+						rule.Handle(&detail, val)
+					}
+				}
+
+				break
 			}
 		})
 
