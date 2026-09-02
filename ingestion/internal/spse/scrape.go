@@ -20,6 +20,7 @@ import (
 type ScrapeContext struct {
 	Pemda string
 	Year string
+	IngestionID string
 }
 
 func (s *SPSEScraper) Scrape(pemdas []string, years []string) error {
@@ -28,6 +29,7 @@ func (s *SPSEScraper) Scrape(pemdas []string, years []string) error {
 			ctx := ScrapeContext{
 				Pemda: pemda,
 				Year: year,
+				IngestionID: time.Now().Format("2006-01-02_150405"),
 			}
 
 			for _, cfg := range category.AllConfigs() {

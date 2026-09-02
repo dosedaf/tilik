@@ -7,7 +7,6 @@ import (
 	"strings"
 	"os"
 	"strconv"
-	"time"
 
 	"ingestion/internal/spse/model"
 	"ingestion/util"
@@ -22,13 +21,11 @@ func (s *SPSEScraper) ExportToCSV(ctx ScrapeContext, data []model.Paket, categor
 			)
 	}
 
-	runID := time.Now().Format("2006-01-02_150405")
-
 	targetDir := filepath.Join(
 		"../data/spse",
 		ctx.Pemda,
 		ctx.Year,
-		runID,
+		ctx.IngestionID,
 		)
 
 	filename := category + ".csv"
