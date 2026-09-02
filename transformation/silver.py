@@ -12,7 +12,6 @@ month_map = {
     "September": "Sep", "Oktober": "Oct", "November": "Nov", "Desember": "Dec",
 }
 
-
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
     return df
@@ -127,7 +126,6 @@ def transform_pencatatan(df: pd.DataFrame) -> pd.DataFrame:
     df['tanggal_pembuatan'] = parse_indo_date(df['tanggal_pembuatan'])
     df['tahun_anggaran'] = dedupe_words(df['tahun_anggaran'])
     # df['pemenang_berkontrak'] = split_list_field(df['pemenang_berkontrak'])
-    print(df['realisasi'].dtype)
     df['realisasi'] = split_list_field(df['realisasi'])
     return df
 
@@ -199,33 +197,42 @@ CATEGORIES: dict[str, Category] = {
 }
 
 def discover_files(base_path: Path) -> dict[str, list[Path]]:
-    """Finds every matching csv under base_path/<pemda>/<year>/<run_id>/<file>."""
     return {
         cat_name: list(base_path.rglob(cat.filename))
         for cat_name, cat in CATEGORIES.items()
     }
 
 
-def latest_run_per_period(paths: list[Path]) -> list[Path]:
+def latest_ingestion_per_period(paths: list[Path]) -> list[Path]:
     best: dict[tuple[str, str], tuple[str, Path]] = {}
     skipped = 0
+
     for p in paths:
         try:
-            pemda, year, run_id = p.parts[-4], p.parts[-3], p.parts[-2]
+            pemda, year, ingestion_id = p.parts[-4], p.parts[-3], p.parts[-2]
         except IndexError:
             logging.warning(f"unexpected path shape, skipping: {p}")
             skipped += 1
             continue
+
         key = (pemda, year)
-        if key not in best or run_id > best[key][0]:
+
+        if key not in best or ingestion_id > best[key][0]:
             if key in best:
                 logging.info(
-                    f"superseding run '{best[key][0]}' with '{run_id}' for {pemda}/{year}"
+                    f"superseding ingestion '{best[key][0]}' "
+                    f"with '{ingestion_id}' for {pemda}/{year}"
                 )
-            best[key] = (run_id, p)
+
+            best[key] = (ingestion_id, p)
+
     if skipped:
-        logging.warning(f"skipped {skipped} path(s) with unexpected structure")
+        logging.warning(
+            f"skipped {skipped} path(s) with unexpected structure"
+        )
+
     return [p for _, p in best.values()]
+
 
 base_path = Path('/home/yoda/projects/tilik/data/spse')
 
@@ -234,7 +241,8 @@ if __name__ == "__main__":
 
     for cat_name, cat in CATEGORIES.items():
         raw_paths = files_by_category[cat_name]
-        deduped_paths = latest_run_per_period(raw_paths)
+        deduped_paths = latest_ingestion_per_period(raw_paths)
+
         logging.info(
             f"{cat_name}: {len(raw_paths)} file(s) found, "
             f"{len(deduped_paths)} kept after dedup"
@@ -243,14 +251,27 @@ if __name__ == "__main__":
         for csv_path in deduped_paths:
             try:
                 df = pd.read_csv(csv_path)
+
                 df = cat.transform(df)
                 cat.validate(df)
 
                 rel = csv_path.relative_to(base_path)
-                out_path = Path('data') / rel.parent / f'{rel.stem}_cleaned.csv'
-                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path = (
+                    Path('data')
+                    / rel.parent
+                    / f'{rel.stem}_cleaned.csv'
+                )
+
+                out_path.parent.mkdir(
+                    parents=True,
+                    exist_ok=True,
+                )
+
                 df.to_csv(out_path, index=False)
+
                 logging.info(f"wrote {out_path}")
 
             except Exception:
-                logging.exception(f"etl failed for {csv_path}")
+                logging.exception(
+                    f"etl failed for {csv_path}"
+                )
