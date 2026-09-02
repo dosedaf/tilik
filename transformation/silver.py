@@ -49,7 +49,7 @@ def transform_tender(df: pd.DataFrame) -> pd.DataFrame:
 
 def validate_tender(df: pd.DataFrame):
     required = {
-        'kategori', 'kode_tender', 'nama_tender', 'tanggal_pembuatan',
+        'kategori', 'kode_tender', 'nama_tender', 'kode_rup', 'sumber_dana', 'tanggal_pembuatan',
         'k/l/pd/instansi_lainnya', 'status', 'satuan_kerja', 'jenis_pengadaan',
         'metode_pengadaan', 'reverse_auction', 'tahun_anggaran',
         'nilai_pagu_(dalam_rupiah)', 'nilai_hps_(dalam_rupiah)', 'jenis_kontrak',
@@ -59,6 +59,8 @@ def validate_tender(df: pd.DataFrame):
 
     assert df['kode_tender'].dtype == 'int64'
     assert pd.api.types.is_string_dtype(df['nama_tender'])
+    assert df['kode_rup'].dtype == 'int64'
+    assert pd.api.types.is_string_dtype(df['sumber_dana'])
     assert pd.api.types.is_string_dtype(df['k/l/pd/instansi_lainnya'])
     assert pd.api.types.is_string_dtype(df['status'])
     assert pd.api.types.is_string_dtype(df['satuan_kerja'])
@@ -93,7 +95,7 @@ def transform_nontender(df: pd.DataFrame) -> pd.DataFrame:
 
 def validate_nontender(df: pd.DataFrame):
     required = {
-        'kategori', 'kode_paket', 'nama_paket', 'tanggal_pembuatan',
+        'kategori', 'kode_paket', 'nama_paket', 'kode_rup', 'sumber_dana', 'tanggal_pembuatan',
         'k/l/pd/instansi_lainnya', 'status', 'satuan_kerja', 'jenis_pengadaan',
         'metode_pengadaan', 'khusus_orang_asli_papua_(oap)', 'tahun_anggaran',
         'nilai_pagu_(dalam_rupiah)', 'nilai_hps_(dalam_rupiah)', 'jenis_kontrak',
@@ -106,6 +108,8 @@ def validate_nontender(df: pd.DataFrame):
 
     assert df['kode_paket'].dtype == 'int64'
     assert pd.api.types.is_string_dtype(df['nama_paket'])
+    assert df['kode_rup'].dtype == 'int64'
+    assert pd.api.types.is_string_dtype(df['sumber_dana'])
     assert pd.api.types.is_datetime64_dtype(df['tanggal_pembuatan'])
     assert pd.api.types.is_string_dtype(df['tahun_anggaran'])
     assert df['nilai_pagu_(dalam_rupiah)'].dtype == 'int64'
@@ -132,7 +136,7 @@ def transform_pencatatan(df: pd.DataFrame) -> pd.DataFrame:
 
 def validate_pencatatan(df: pd.DataFrame):
     required = {
-        'kategori', 'kode_paket', 'nama_paket', 'tanggal_pembuatan',
+        'kategori', 'kode_paket', 'nama_paket', 'kode_rup', 'sumber_dana', 'tanggal_pembuatan',
         'k/l/pd/instansi_lainnya', 'status', 'satuan_kerja', 'jenis_pengadaan',
         'metode_pengadaan', 'tahun_anggaran', 'nilai_pagu_paket_(dalam_rupiah)',
         'realisasi', 'url',
@@ -141,6 +145,8 @@ def validate_pencatatan(df: pd.DataFrame):
 
     assert df['kode_paket'].dtype == 'int64'
     assert pd.api.types.is_string_dtype(df['nama_paket'])
+    assert df['kode_rup'].dtype == 'int64'
+    assert pd.api.types.is_string_dtype(df['sumber_dana'])
     assert pd.api.types.is_datetime64_dtype(df['tanggal_pembuatan'])
     assert pd.api.types.is_string_dtype(df['tahun_anggaran'])
     assert df['nilai_pagu_paket_(dalam_rupiah)'].dtype == 'int64'
@@ -163,7 +169,7 @@ def transform_swakelola(df: pd.DataFrame) -> pd.DataFrame:
 
 def validate_swakelola(df: pd.DataFrame):
     required = {
-        'kategori', 'kode_swakelola', 'nama_swakelola', 'tanggal_pembuatan',
+        'kategori', 'kode_swakelola', 'nama_swakelola', 'kode_rup', 'sumber_dana', 'tanggal_pembuatan',
         'k/l/pd', 'status', 'satuan_kerja', 'tahun_anggaran',
         'nilai_pagu_paket_(dalam_rupiah)', 
         'realisasi', 'url',
@@ -172,6 +178,8 @@ def validate_swakelola(df: pd.DataFrame):
 
     assert df['kode_swakelola'].dtype == 'int64'
     assert pd.api.types.is_string_dtype(df['nama_swakelola'])
+    assert df['kode_rup'].dtype == 'int64'
+    assert pd.api.types.is_string_dtype(df['sumber_dana'])
     assert pd.api.types.is_datetime64_dtype(df['tanggal_pembuatan'])
     assert pd.api.types.is_string_dtype(df['tahun_anggaran'])
     assert df['nilai_pagu_paket_(dalam_rupiah)'].dtype == 'int64'
