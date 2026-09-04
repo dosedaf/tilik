@@ -80,6 +80,11 @@ type RUP struct {
 	SumberDana string
 }
 
+type SyaratKualifikasi struct {
+	Administrasi []string `json:"administrasi"`
+	Teknis       []string `json:"teknis"`
+}
+
 type Paket struct {
 	Kategori string
 	Kode	string
@@ -109,7 +114,7 @@ type TenderDetail struct {
 	HPS int64
 	Lokasi string
 	KualifikasiUsaha string
-	SyaratKualifikasi string
+	SyaratKualifikasi SyaratKualifikasi
 	Peserta string
 	Pemenang string
 	PemenangBerkontrak string
@@ -122,7 +127,7 @@ type NonTenderDetail struct {
 	JenisKontrak string
 	HPS int64
 	Lokasi string
-	SyaratKualifikasi string
+	SyaratKualifikasi SyaratKualifikasi
 	Peserta string
 	Pemenang string
 	PemenangBerkontrak string
